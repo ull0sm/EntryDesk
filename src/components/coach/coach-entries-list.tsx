@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +45,7 @@ export function CoachEntriesList({ entries, eventDays, dojos, statusPreset, isRe
     const [statusFilter, setStatusFilter] = useState('all')
     const [beltFilter, setBeltFilter] = useState('all')
     const [dayFilter, setDayFilter] = useState('all')
+    const [dojoFilter, setDojoFilter] = useState('all')
     const [page, setPage] = useState(1)
 
     useEffect(() => {
@@ -60,13 +61,69 @@ export function CoachEntriesList({ entries, eventDays, dojos, statusPreset, isRe
         new Set(entries.map((e) => e.students?.rank).filter(Boolean))
     ).sort()
 
+    const dojoNameById = useMemo(() => {
+        const map = new Map<string, string>()
+        dojos.forEach((dojo) => {
+            if (dojo?.id && dojo?.name) {
+                map.set(String(dojo.id), dojo.name)
+            }
+        })
+        return map
+    }, [dojos])
+
+    const getDojoName = (entry: any) => {
+        const joinedDojoName = entry.students?.dojos?.name
+        if (joinedDojoName) return String(joinedDojoName)
+
+        const dojoId = entry.students?.dojo_id
+        if (!dojoId) return ''
+
+        return dojoNameById.get(String(dojoId)) || ''
+    }
+
+    const getDojoId = (entry: any) => {
+        const joinedDojoId = entry.students?.dojos?.id
+        if (joinedDojoId) return String(joinedDojoId)
+
+        const dojoId = entry.students?.dojo_id
+        if (!dojoId) return ''
+
+        return String(dojoId)
+    }
+
+    const dojoFilterOptions = useMemo(() => {
+        const uniqueDojos = new Map<string, string>()
+
+        entries.forEach((entry) => {
+            const dojoId = getDojoId(entry)
+            const dojoName = getDojoName(entry)
+            if (dojoId && dojoName) {
+                uniqueDojos.set(dojoId, dojoName)
+            }
+        })
+
+        return Array.from(uniqueDojos.entries())
+            .map(([id, name]) => ({ id, name }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+    }, [entries, dojos])
+
+    useEffect(() => {
+        if (dojoFilter === 'all') return
+        const hasSelectedDojo = dojoFilterOptions.some((dojo) => dojo.id === dojoFilter)
+        if (!hasSelectedDojo) {
+            setDojoFilter('all')
+            setPage(1)
+        }
+    }, [dojoFilter, dojoFilterOptions])
+
     // Filter Logic
     const filteredEntries = entries.filter(e => {
         const matchesSearch = (e.students?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
         const matchesStatus = statusFilter === 'all' || e.status === statusFilter
         const matchesBelt = beltFilter === 'all' || e.students?.rank === beltFilter
         const matchesDay = dayFilter === 'all' || e.event_day_id === dayFilter
-        return matchesSearch && matchesStatus && matchesBelt && matchesDay
+        const matchesDojo = dojoFilter === 'all' || getDojoId(e) === dojoFilter
+        return matchesSearch && matchesStatus && matchesBelt && matchesDay && matchesDojo
     })
 
     // Pagination Logic
@@ -206,6 +263,17 @@ export function CoachEntriesList({ entries, eventDays, dojos, statusPreset, isRe
                             </SelectContent>
                         </Select>
                     )}
+                    <Select value={dojoFilter} onValueChange={(v) => { setDojoFilter(v); setPage(1); }}>
+                        <SelectTrigger className="h-11 w-[170px] rounded-full">
+                            <SelectValue placeholder="Filter Dojo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Dojos</SelectItem>
+                            {dojoFilterOptions.map((dojo) => (
+                                <SelectItem key={dojo.id} value={String(dojo.id)}>{dojo.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -244,6 +312,7 @@ export function CoachEntriesList({ entries, eventDays, dojos, statusPreset, isRe
                             </th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground w-[80px]">Chest</th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Student</th>
+                            <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Dojo</th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Belt</th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Day</th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Type</th>
@@ -253,7 +322,7 @@ export function CoachEntriesList({ entries, eventDays, dojos, statusPreset, isRe
                     <tbody className="[&_tr:last-child]:border-0">
                         {paginatedEntries.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="h-24 text-center text-muted-foreground">
+                                <td colSpan={8} className="h-24 text-center text-muted-foreground">
                                     {filteredEntries.length === 0
                                         ? "No entries match your filters."
                                         : "No active entries. Go to 'Register' tab to add students."}
@@ -304,6 +373,9 @@ export function CoachEntriesList({ entries, eventDays, dojos, statusPreset, isRe
                                             )}
                                         </div>
                                     </td>
+
+                                    {/* Dojo */}
+                                    <td className="p-4 align-middle">{getDojoName(entry) || '-'}</td>
 
                                     {/* Belt */}
                                     <td className="p-4 align-middle capitalize">{entry.students?.rank || '-'}</td>
