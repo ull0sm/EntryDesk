@@ -19,12 +19,14 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { EVENT_LEVEL_OPTIONS, type EventLevel } from '@/lib/events/level'
+import { isEventTypeRequiringLevel } from '@/lib/events/type'
 
 interface EventSettingsFormProps {
     event: {
         id: string
         title: string
         location: string | null
+        event_type?: string | null
         event_level?: EventLevel | null
         is_registration_open: boolean
         is_public: boolean
@@ -44,6 +46,7 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
     const [isSaving, setIsSaving] = useState(false)
     const [isTogglingVisibility, setIsTogglingVisibility] = useState(false)
     const [tempClosesAt, setTempClosesAt] = useState<string | null>(event.temporary_registration_closes_at || null)
+    const requiresEventLevel = isEventTypeRequiringLevel(event.event_type)
 
     const handleTemporaryOpen = async (minutes: number) => {
         setIsSaving(true)
@@ -66,7 +69,11 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
         e.preventDefault()
         setIsSaving(true)
         try {
-            await updateEventSettings(event.id, { title, location, event_level: eventLevel || null })
+            await updateEventSettings(event.id, {
+                title,
+                location,
+                event_level: requiresEventLevel ? (eventLevel || null) : null,
+            })
             toast.success("Event details updated successfully")
         } catch (error) {
             toast.error(getErrorMessage(error, 'Failed to update event details'))
@@ -192,19 +199,21 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
                                 placeholder="E.g. 123 Main St, City, ST 12345"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="event_level">Event Level</Label>
-                            <Select value={eventLevel || undefined} onValueChange={(value) => setEventLevel(value as EventLevel)}>
-                                <SelectTrigger id="event_level">
-                                    <SelectValue placeholder="Select level" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {EVENT_LEVEL_OPTIONS.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {requiresEventLevel && (
+                            <div className="space-y-2">
+                                <Label htmlFor="event_level">Event Level</Label>
+                                <Select value={eventLevel || undefined} onValueChange={(value) => setEventLevel(value as EventLevel)}>
+                                    <SelectTrigger id="event_level">
+                                        <SelectValue placeholder="Select level" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {EVENT_LEVEL_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         <Button type="submit" disabled={isSaving}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save General Settings

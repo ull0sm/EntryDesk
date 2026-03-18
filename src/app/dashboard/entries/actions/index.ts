@@ -92,7 +92,7 @@ export async function submitEntries(eventId: string) {
     return { success: true }
 }
 
-export async function bulkCreateEntries(eventId: string, entries: { student_id: string, participation_type: string, event_day_id?: string | null }[]) {
+export async function bulkCreateEntries(eventId: string, entries: { student_id: string, participation_type?: string | null, event_day_id?: string | null }[]) {
     const { supabase, user } = await requireRole('coach')
 
     await ensureRegistrationOpenForEvent(supabase, eventId)
@@ -103,7 +103,7 @@ export async function bulkCreateEntries(eventId: string, entries: { student_id: 
         event_id: eventId,
         coach_id: user.id,
         student_id: e.student_id,
-        participation_type: e.participation_type,
+        participation_type: e.participation_type || null,
         status: 'draft',
         category_id: null,
         event_day_id: e.event_day_id || null
@@ -154,9 +154,8 @@ export async function bulkSubmitEntries(entryIds: string[]) {
     entriesToValidate.forEach(e => {
         // @ts-ignore
         const s = Array.isArray(e.students) ? e.students[0] : e.students
-        // Check for missing fields. 0 is valid for weight? Maybe. But usually not. Let's assume weight > 0 or at least not null. 
-        // Supabase returns null if column is null.
-        if (s && s.name && s.gender && s.date_of_birth && s.rank && s.weight) {
+        // Weight is optional; only core profile fields are required for submission.
+        if (s && s.name && s.gender && s.date_of_birth && s.rank) {
             validEntryIds.push(e.id)
         } else {
             invalidEntries.push(e)
@@ -166,7 +165,7 @@ export async function bulkSubmitEntries(entryIds: string[]) {
     if (validEntryIds.length === 0) {
         // All selected entries were invalid
         console.log("No valid entries to submit. Missing profile details.")
-        return { success: false, message: 'All selected entries are missing required profile details (Weight, Rank, DOB, etc).' }
+        return { success: false, message: 'All selected entries are missing required profile details (Rank, DOB, Gender, etc).' }
     }
 
     // 3. Update Valid Entries Only
