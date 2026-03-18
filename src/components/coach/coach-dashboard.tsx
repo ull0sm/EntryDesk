@@ -16,6 +16,7 @@ import { RegistrationDeadline } from "@/components/events/registration-deadline"
 
 interface CoachDashboardProps {
     event: any
+    eventType?: string | null
     stats: any
     entries: any[]
     students: any[]
@@ -25,7 +26,7 @@ interface CoachDashboardProps {
     isRegistrationClosed?: boolean
 }
 
-export function CoachDashboard({ event, stats, entries, students, eventDays, dojos, isPastEvent = false, isRegistrationClosed = false }: CoachDashboardProps) {
+export function CoachDashboard({ event, eventType, stats, entries, students, eventDays, dojos, isPastEvent = false, isRegistrationClosed = false }: CoachDashboardProps) {
     const existingStudentIds = useMemo(() => new Set(entries.map(e => e.student_id)), [entries])
 
     const [statusPreset, setStatusPreset] = useState<string>('all')
@@ -86,6 +87,7 @@ export function CoachDashboard({ event, stats, entries, students, eventDays, doj
                     entries={entries}
                     eventDays={eventDays}
                     dojos={dojos}
+                    eventType={eventType}
                     statusPreset={statusPreset}
                     isReadOnly={isPastEvent}
                 />
@@ -106,6 +108,7 @@ export function CoachDashboard({ event, stats, entries, students, eventDays, doj
                             existingStudentIds={existingStudentIds}
                             eventId={event.id}
                             eventDays={eventDays}
+                            eventType={eventType}
                             dojos={dojos}
                         />
                     </DialogContent>

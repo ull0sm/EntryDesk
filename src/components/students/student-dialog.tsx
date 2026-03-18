@@ -23,6 +23,7 @@ import {
 import { createStudent, updateStudent } from '@/app/dashboard/students/actions'
 import { normalizeDobToIso } from '@/lib/date'
 import { upsertEntry } from '@/app/dashboard/entries/actions'
+import { isSimpleEntryEventType } from '@/lib/events/type'
 
 interface Dojo {
     id: string
@@ -49,9 +50,10 @@ interface StudentDialogProps {
     initialDojoId?: string
     entry?: any
     eventDays?: any[]
+    eventType?: string | null
 }
 
-export function StudentDialog({ dojos, student, open, onOpenChange, showTrigger = true, initialDojoId, entry, eventDays }: StudentDialogProps) {
+export function StudentDialog({ dojos, student, open, onOpenChange, showTrigger = true, initialDojoId, entry, eventDays, eventType }: StudentDialogProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const submitLockRef = useRef(false)
@@ -70,6 +72,7 @@ export function StudentDialog({ dojos, student, open, onOpenChange, showTrigger 
     const [dob, setDob] = useState<string>(normalizeDobToIso(student?.date_of_birth) || '')
     const [entryDayId, setEntryDayId] = useState<string>(entry?.event_day_id || '')
     const [entryType, setEntryType] = useState<string>(entry?.participation_type || '')
+    const isSimpleEntryEvent = isSimpleEntryEventType(eventType)
 
     // Update form data whenever student prop changes or dialog opens
     useEffect(() => {
@@ -224,7 +227,7 @@ export function StudentDialog({ dojos, student, open, onOpenChange, showTrigger 
                             />
                         </div>
 
-                        {entry && eventDays && eventDays.length > 0 && (
+                        {entry && !isSimpleEntryEvent && eventDays && eventDays.length > 0 && (
                             <>
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label className="text-right">Day</Label>

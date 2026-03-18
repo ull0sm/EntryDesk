@@ -73,6 +73,7 @@ export default async function EventEntriesPage({ params }: { params: { eventId: 
   return (
     <CoachDashboard
       event={event}
+      eventType={event.event_type}
       stats={stats}
       entries={validEntries}
       students={students || []}

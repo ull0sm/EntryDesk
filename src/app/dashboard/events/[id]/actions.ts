@@ -3,6 +3,7 @@
 import { requireRole } from '@/lib/auth/require-role'
 import { redirect } from 'next/navigation'
 import { isEventLevel, type EventLevel } from '@/lib/events/level'
+import { isEventTypeRequiringLevel } from '@/lib/events/type'
 
 export async function deleteEvent(formData: FormData) {
     const eventIdValue = formData.get('eventId')
@@ -48,7 +49,7 @@ export async function updateEventSettings(eventId: string, data: { title?: strin
 
     const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('id, organizer_id')
+        .select('id, organizer_id, event_type')
         .eq('id', eventId)
         .single()
 
@@ -58,9 +59,14 @@ export async function updateEventSettings(eventId: string, data: { title?: strin
         throw new Error('Not authorized to edit this event')
     }
 
+    const updateData = { ...data }
+    if (!isEventTypeRequiringLevel(event.event_type)) {
+        updateData.event_level = null
+    }
+
     const { error: updateError } = await supabase
         .from('events')
-        .update(data)
+        .update(updateData)
         .eq('id', eventId)
 
     if (updateError) throw new Error(updateError.message)

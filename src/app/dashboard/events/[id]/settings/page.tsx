@@ -8,7 +8,7 @@ export default async function EventSettingsPage({ params }: { params: { id: stri
 
     const { data: event } = await supabase
         .from('events')
-        .select('id, title, location, event_level, is_registration_open, is_public, organizer_id, temporary_registration_closes_at')
+        .select('id, title, location, event_type, event_level, is_registration_open, is_public, organizer_id, temporary_registration_closes_at')
         .eq('id', id)
         .single()
 

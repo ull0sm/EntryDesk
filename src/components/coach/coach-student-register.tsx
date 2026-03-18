@@ -17,16 +17,18 @@ import { StudentDialog } from "@/components/students/student-dialog"
 import { normalizeDobToIso } from "@/lib/date"
 import { updateStudentGenericChecked } from "@/app/dashboard/students/actions"
 import { toast } from "sonner"
+import { isSimpleEntryEventType } from '@/lib/events/type'
 
 interface CoachStudentRegisterProps {
     students: any[]
     existingStudentIds: Set<string>
     eventId: string
     eventDays: any[]
+    eventType?: string | null
     dojos: any[]
 }
 
-export function CoachStudentRegister({ students, existingStudentIds, eventId, eventDays, dojos }: CoachStudentRegisterProps) {
+export function CoachStudentRegister({ students, existingStudentIds, eventId, eventDays, eventType, dojos }: CoachStudentRegisterProps) {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [isAdding, setIsAdding] = useState(false)
     const [participationType, setParticipationType] = useState('both')
@@ -41,6 +43,7 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
         }
         return map
     })
+    const isSimpleEntryEvent = isSimpleEntryEventType(eventType)
 
     // Filters
     const [filterDojo, setFilterDojo] = useState('all')
@@ -91,7 +94,7 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
         if (count === 0) return
 
         // Validate Day Selection if days exist
-        if (eventDays.length > 0 && (!selectedDayId || selectedDayId === 'all')) {
+        if (!isSimpleEntryEvent && eventDays.length > 0 && (!selectedDayId || selectedDayId === 'all')) {
             alert("Please select an Event Day before adding students.")
             return
         }
@@ -100,8 +103,8 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
         try {
             const entries = Array.from(selectedIds).map(id => ({
                 student_id: id,
-                participation_type: participationType,
-                event_day_id: selectedDayId !== 'all' ? selectedDayId : null
+                participation_type: isSimpleEntryEvent ? null : participationType,
+                event_day_id: isSimpleEntryEvent ? null : (selectedDayId !== 'all' ? selectedDayId : null)
             }))
             await bulkCreateEntries(eventId, entries)
             setSelectedIds(new Set())
@@ -137,6 +140,7 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
             <StudentDialog
                 dojos={dojos}
                 student={editingStudent}
+                eventType={eventType}
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
             />
@@ -202,7 +206,7 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 sm:pb-0">
                     <div className="flex gap-2 min-w-max">
                         {/* Event Day Selector (Conditional) */}
-                        {eventDays.length > 0 && (
+                        {!isSimpleEntryEvent && eventDays.length > 0 && (
                             <Select value={selectedDayId} onValueChange={setSelectedDayId}>
                                 <SelectTrigger className="w-[140px] sm:w-[180px] rounded-full border-white/[0.12] bg-background/50">
                                     <SelectValue placeholder="Select Day (Required)" />
@@ -216,16 +220,18 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
                             </Select>
                         )}
 
-                        <Select value={participationType} onValueChange={setParticipationType}>
-                            <SelectTrigger className="w-[110px] sm:w-[140px] rounded-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="both">Both</SelectItem>
-                                <SelectItem value="kata">Kata</SelectItem>
-                                <SelectItem value="kumite">Kumite</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        {!isSimpleEntryEvent && (
+                            <Select value={participationType} onValueChange={setParticipationType}>
+                                <SelectTrigger className="w-[110px] sm:w-[140px] rounded-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="both">Both</SelectItem>
+                                    <SelectItem value="kata">Kata</SelectItem>
+                                    <SelectItem value="kumite">Kumite</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
 
                         <Button size="sm" onClick={handleAdd} disabled={isAdding || selectedIds.size === 0} className="min-w-[120px] rounded-full bg-emerald-600 hover:bg-emerald-700">
                             {isAdding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <PlusCircle className="h-4 w-4 mr-2" />}

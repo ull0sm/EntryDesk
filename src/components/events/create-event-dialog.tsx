@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -23,11 +23,21 @@ import {
 import { createEvent } from '@/app/dashboard/events/actions'
 import { Checkbox } from "@/components/ui/checkbox"
 import { EVENT_LEVEL_OPTIONS } from '@/lib/events/level'
+import { isEventTypeRequiringLevel } from '@/lib/events/type'
 
 export function CreateEventDialog() {
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [eventType, setEventType] = useState<string>('')
+    const [eventLevel, setEventLevel] = useState<string>('')
     const submitLockRef = useRef(false)
+    const requiresEventLevel = isEventTypeRequiringLevel(eventType || null)
+
+    useEffect(() => {
+        if (!requiresEventLevel) {
+            setEventLevel('')
+        }
+    }, [requiresEventLevel])
 
     const handleSubmit = async (formData: FormData) => {
         if (submitLockRef.current || isSubmitting) {
@@ -63,7 +73,7 @@ export function CreateEventDialog() {
                 <DialogHeader>
                     <DialogTitle>Create New Event</DialogTitle>
                     <DialogDescription>
-                        Set up a new event and assign its competition level.
+                        Set up a new event with dates and registration settings.
                     </DialogDescription>
                 </DialogHeader>
                 <form action={handleSubmit}>
@@ -75,7 +85,7 @@ export function CreateEventDialog() {
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="event_type" className="text-right">Type</Label>
                             <div className="col-span-3">
-                                <Select name="event_type" required>
+                                <Select name="event_type" value={eventType} onValueChange={setEventType} required>
                                     <SelectTrigger id="event_type">
                                         <SelectValue placeholder="Select Type" />
                                     </SelectTrigger>
@@ -87,21 +97,23 @@ export function CreateEventDialog() {
                                 </Select>
                             </div>
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="event_level" className="text-right">Level</Label>
-                            <div className="col-span-3">
-                                <Select name="event_level" required>
-                                    <SelectTrigger id="event_level">
-                                        <SelectValue placeholder="Select Level" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {EVENT_LEVEL_OPTIONS.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                        {requiresEventLevel && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="event_level" className="text-right">Level</Label>
+                                <div className="col-span-3">
+                                    <Select name="event_level" value={eventLevel} onValueChange={setEventLevel} required>
+                                        <SelectTrigger id="event_level">
+                                            <SelectValue placeholder="Select Level" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {EVENT_LEVEL_OPTIONS.map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                        </div>
+                        )}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="location" className="text-right">Location</Label>
                             <Input id="location" name="location" className="col-span-3" placeholder="City Arena" />
