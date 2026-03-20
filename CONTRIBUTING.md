@@ -7,7 +7,7 @@ First off, thank you for considering contributing to EntryDesk! We welcome contr
 1. **Fork the Repository**: Start by forking the EntryDesk repository to your own GitHub account.
 2. **Clone Locally**: Clone your fork to your local machine.
    ```bash
-   git clone https://github.com/your-username/entrydesk.git
+   git clone https://github.com/ull0sm/entrydesk.git
    cd entrydesk
    ```
 3. **Set Up the Project**: Follow the Setup instructions in the `README.md` to install dependencies and configure your local Supabase instance.
