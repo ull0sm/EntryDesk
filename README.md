@@ -1,26 +1,45 @@
-# EntryDesk
+<div align="center">
+  <h1>🥋 EntryDesk</h1>
+  <p><strong>The Open-Source Tournament Operations & Event Management Platform</strong></p>
 
-EntryDesk is a role-based event management dashboard tailored for martial arts and sports events. It streamlines the process of organizing tournaments, managing student rosters, and processing event registrations.
+  [![GitHub stars](https://img.shields.io/github/stars/ull0sm/entrydesk?style=flat-square)](https://github.com/ull0sm/entrydesk/stargazers)
+  [![GitHub forks](https://img.shields.io/github/forks/ull0sm/entrydesk?style=flat-square)](https://github.com/ull0sm/entrydesk/network/members)
+  [![GitHub issues](https://img.shields.io/github/issues/ull0sm/entrydesk?style=flat-square)](https://github.com/ull0sm/entrydesk/issues)
+  [![Contributors](https://img.shields.io/github/contributors/ull0sm/entrydesk?style=flat-square)](https://github.com/ull0sm/entrydesk/graphs/contributors)
+</div>
+
+<hr />
+
+## 📖 About EntryDesk
+
+Most grassroots martial arts events still operate on fragmented spreadsheets, paper entries, and ad-hoc messaging. 
+
+**EntryDesk** is a highly optimized, role-based dashboard designed to standardize and scale martial arts tournaments. It provides a reproducible, self-hosted infrastructure that empowers local communities, dojos, and federations to run professional-grade events without the lock-in and high friction of paid proprietary software.
+
+## 🌍 Open Source Impact & Maintainership
+
+**Maintainer & Project Owner:** [@ull0sm](https://github.com/ull0sm)
+
+As the primary maintainer, my vision is to ship core operational infrastructure to the martial arts ecosystem. EntryDesk acts as a public good for organizers globally. I actively maintain the codebase, review pull requests, and manage the database schema to ensure security, high performance, and accessibility for any organization wanting to host a tournament.
 
 ## 🌟 Key Features
 
-### For Organizers
-- **Event Management**: Create and manage public or private events.
-- **Application Review**: Approve or reject coach applications per event.
-- **Entry Management**: View all entries via the dedicated `organizer_entries_view`.
-- **Export Capabilities**: Easily export event entries to Excel/CSV.
-- **Analytics Dashboard**: Clickable metric cards that deep-link into filtered views for quick insights.
+### 🛠️ For Organizers
+- **Full-Lifecycle Event Management**: Effortlessly create, schedule, and manage public or private events.
+- **Approval Workflows**: Review and manage coach applications through a dedicated pipeline.
+- **Unified Entry Management**: Leverage real-time views (`organizer_entries_view`) for comprehensive roster access.
+- **Frictionless Export**: Instant Excel/CSV data dumps for operational bracket management.
+- **Advanced Dashboards**: Interactive, deep-linked analytics cards tailored for operational velocity.
 
-### For Coaches
-- **Dojo & Student Roster**: Manage your dojo's information and student profiles.
-- **Event Discovery**: Browse public events and submit participation applications.
-- **Registration Flow**: Seamlessly register approved students for specific events.
-- **Entry Tracking**: Manage entry statuses (draft, submitted, approved, rejected).
+### 🥋 For Coaches
+- **Roster & Dojo Hub**: Centralized location for managing students and dojo metadata.
+- **Registration Pipelines**: Seamlessly map eligible students to upcoming events.
+- **Entry State Machine**: Track granular statuses (`draft`, `submitted`, `approved`, `rejected`).
 
-### UX & Design
-- **Modern UI**: Clean, athletic-inspired design using Tailwind CSS v4 and Radix UI components.
-- **Instant Feedback**: Determinate navigation loader overlays for a snappy feel.
-- **Optimized Navigation**: "One-step back" behavior using browser history to prevent forced jumps to list pages.
+### 💻 Product & Design Architecture
+- **Instant Feedback**: Optimistic UI loops, determinate loading overlays, and smooth transition APIs.
+- **History-Aware Navigation**: Context-preserving "one-step back" behavior eliminating frustrating list-jumps.
+- **Modern Aesthetic**: Clean, athletic-inspired design using [Tailwind CSS v4](https://tailwindcss.com/) and [Radix UI](https://www.radix-ui.com/).
 
 ## 🛠 Tech Stack
 
@@ -29,72 +48,33 @@ EntryDesk is a role-based event management dashboard tailored for martial arts a
 - **Backend & Database**: [Supabase](https://supabase.com/)
   - Authentication (Email/Password + Google OAuth)
   - PostgreSQL Database (Tables + RLS Policies)
-  - SSR helpers via `@supabase/ssr`
 
-## 🚀 Setup & Local Development
+## 🚀 Quick Start & Installation
 
-### 1. Prerequisites
-- Node.js (v20+ recommended)
-- A Supabase project (the free tier works perfectly)
+We've made spinning up a local instance of EntryDesk as smooth as possible.
+    
+👉 **See the [QUICKSETUP.md](QUICKSETUP.md) guide for detailed installation, environment, and database configuration instructions.**
 
-### 2. Install Dependencies
-```bash
-npm install
-```
+## 📚 Documentation & Contributing
 
-### 3. Environment Variables
-Copy the template file to create your local environment configuration:
-```bash
-cp .env.example .env.local
-```
-Fill in the required values from your Supabase dashboard:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Cloudflare Turnstile site key used by login and signup)
-- `NEXT_PUBLIC_BASE_URL` (Defaults to `http://localhost:3000` for local dev)
+We believe robust software is built collaboratively. We welcome issues, bug reports, and pull requests!
 
-### 4. Database Schema Setup
-This repository includes the necessary schema, RLS policies, and views in `supabase/migrations/db.sql`.
+- **[Contribution Guidelines](CONTRIBUTING.md)**: How to submit features and fixes.
+- **[Changelog](CHANGELOG.md)**: Explore our latest updates and roadmaps.
 
-To apply the schema:
-1. Go to your Supabase Dashboard → **SQL Editor**
-2. Paste the contents of `supabase/migrations/db.sql` and run it.
+## 🤝 Contributors
 
-*This will generate the required tables (`profiles`, `dojos`, `students`, `events`, etc.), enums, RLS policies, and the `organizer_entries_view`.*
+EntryDesk is made possible by our amazing community. Thank you to everyone who has helped build and improve this platform!
 
-### 5. Authentication Configuration
-**Email/Password** requires Supabase CAPTCHA protection to be enabled when Turnstile is configured in this app.
-Users must also verify their email before they can access the dashboard.
+**Core Maintainer:** [@ull0sm](https://github.com/ull0sm)
 
-**Cloudflare Turnstile for Email Login and Signup**:
-1. Create a Turnstile widget in Cloudflare and copy the site key and secret key.
-2. Add the site key to your local environment as `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
-3. In Supabase Dashboard, go to **Authentication** → **Bot and Abuse Protection**.
-4. Enable CAPTCHA protection, choose **Cloudflare Turnstile**, and paste the Turnstile secret key.
-5. Save the settings before testing login or signup.
-
-**Google OAuth (Optional)**:
-1. Navigate to Supabase Dashboard → **Authentication** → **Providers** → **Google**.
-2. Enable Google and input your OAuth client credentials.
-3. Add `http://localhost:3000/auth/callback` to the allowed redirect URLs.
-
-### 6. Start the Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
-
-## 👥 Roles & Workflows
-
-### The Profiles Table
-Supabase Auth manages users in `auth.users`, while our application's role and profile data lives in `public.profiles`. Profiles are often auto-created during key flows, such as signing up or applying to an event.
-
-### Making an Organizer
-To access organizer features, a user must have a row in `public.profiles` with `role = 'organizer'`. You can set this explicitly via the Supabase SQL editor:
-```sql
-UPDATE public.profiles SET role = 'organizer' WHERE email = 'organizer@example.com';
-```
+### All Contributors
+<a href="https://github.com/ull0sm/entrydesk/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ull0sm/entrydesk" alt="Contributors list" />
+</a>
 
 ---
 
-Built with ❤️ for the karate community
+<div align="center">
+  <i>Built with ❤️ for the karate community</i>
+</div>
