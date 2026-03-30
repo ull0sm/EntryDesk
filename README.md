@@ -7,7 +7,6 @@
   [![GitHub issues](https://img.shields.io/github/issues/ull0sm/entrydesk?style=flat-square)](https://github.com/ull0sm/entrydesk/issues)
   [![Contributors](https://img.shields.io/github/contributors/ull0sm/entrydesk?style=flat-square)](https://github.com/ull0sm/entrydesk/graphs/contributors)
 </div>
-
 <hr />
 
 ## 📖 About EntryDesk
@@ -16,6 +15,7 @@ Most grassroots martial arts events still operate on fragmented spreadsheets, pa
 
 **EntryDesk** is a highly optimized, role-based dashboard designed to standardize and scale martial arts tournaments. It provides a reproducible, self-hosted infrastructure that empowers local communities, dojos, and federations to run professional-grade events without the lock-in and high friction of paid proprietary software.
 
+[![Git Vital](https://api.gitvital.com/badge/ull0sm/entrydesk.svg)](https://gitvital.com/ull0sm/entrydesk)
 ## 🌍 Open Source Impact & Maintainership
 
 **Maintainer & Project Owner:** [@ull0sm](https://github.com/ull0sm)
