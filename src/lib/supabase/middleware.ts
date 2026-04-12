@@ -38,6 +38,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (user) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('approval_status')
+    .eq('id', user.id)
+    .single()
+
+  if (
+    profile?.approval_status !== 'approved' &&
+    request.nextUrl.pathname.startsWith('/dashboard')
+  ) {
+    return NextResponse.redirect(new URL('/pending-approval', request.url))
+  }
+}
+
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
