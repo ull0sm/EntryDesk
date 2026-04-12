@@ -15,6 +15,7 @@ create table profiles (
     id uuid references auth.users on delete cascade primary key,
     email text not null,
     role user_role default 'coach',
+    approval_status text default 'pending', -- pending, approved, rejected
     full_name text,
     created_at timestamptz default now()
 );
