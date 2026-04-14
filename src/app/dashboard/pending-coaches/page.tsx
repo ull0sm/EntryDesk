@@ -1,4 +1,4 @@
-import { approveCoach } from './actions'
+import { approveCoach, rejectCoach } from './actions'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
@@ -42,6 +42,12 @@ export default async function PendingCoachesPage() {
             <form action={approveCoach.bind(null, coach.id)}>
                 <button className="mt-2 rounded bg-black px-3 py-1 text-white">
                     Approve
+                </button>
+            </form>
+
+            <form action={rejectCoach.bind(null, coach.id)}>
+                <button className="mt-2 ml-2 rounded border px-3 py-1">
+                    Reject
                 </button>
             </form>
         </div>
