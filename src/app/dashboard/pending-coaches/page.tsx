@@ -1,3 +1,4 @@
+import { approveCoach } from './actions'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
@@ -30,13 +31,19 @@ export default async function PendingCoachesPage() {
     .order('created_at', { ascending: false })
 
   return (
-        <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Pending Coach Approvals</h1>
+    <div className="space-y-4">
+        <h1 className="text-2xl font-bold">Pending Coach Approvals</h1>
 
-      {pendingCoaches?.map((coach) => (
+        {pendingCoaches?.map((coach) => (
         <div key={coach.id} className="rounded-lg border p-4">
           <p>{coach.full_name}</p>
           <p>{coach.email}</p>
+
+            <form action={approveCoach.bind(null, coach.id)}>
+                <button className="mt-2 rounded bg-black px-3 py-1 text-white">
+                    Approve
+                </button>
+            </form>
         </div>
       ))}
     </div>
