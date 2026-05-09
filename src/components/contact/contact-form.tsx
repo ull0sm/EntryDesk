@@ -47,11 +47,11 @@ export function ContactForm() {
       })
 
       if (result.success) {
-        setMessage({ type: 'success', text: result.message })
+        setMessage({ type: 'success', text: result.message || 'Message sent successfully.' })
         reset()
         setTurnstileToken(null)
       } else {
-        setMessage({ type: 'error', text: result.error })
+        setMessage({ type: 'error', text: result.error || 'Failed to send message.' })
       }
     })
   }
