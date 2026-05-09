@@ -78,7 +78,7 @@ export function TurnstileField({ formId, onTokenChange }: TurnstileFieldProps) {
         widgetIdRef.current = (window as any).turnstile.render(containerRef.current, {
           sitekey: siteKey,
           theme: 'auto',
-          callback: (nextToken) => {
+          callback: (nextToken: string) => {
             if (isMounted) {
               setToken(nextToken)
               setLoadError(null)
