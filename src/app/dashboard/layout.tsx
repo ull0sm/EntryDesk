@@ -2,6 +2,7 @@ import { getUserProfileWithoutAutoCreate } from '@/lib/auth/require-role'
 import { ResponsiveDashboardFrame } from '@/components/dashboard/responsive-dashboard-frame'
 import { redirect } from 'next/navigation'
 import { isUserIdentityVerified } from '@/lib/auth/verification'
+import { TermsDialog } from '@/components/terms-dialog'
 
 export default async function DashboardLayout({
   children,
@@ -27,6 +28,7 @@ export default async function DashboardLayout({
       profileFullName={profile?.full_name ?? null}
       userEmail={user.email || ''}
     >
+      <TermsDialog />
       {children}
     </ResponsiveDashboardFrame>
   )

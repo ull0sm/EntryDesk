@@ -100,12 +100,16 @@ export function TurnstileField({ formId, onTokenChange }: TurnstileFieldProps) {
               setToken(nextToken)
               setLoadError(null)
               onTokenChangeRef.current?.(Boolean(nextToken))
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('turnstile_status', { detail: true }))
+              }
             }
           },
           'expired-callback': () => {
             if (isMounted) {
               setToken('')
               onTokenChangeRef.current?.(false)
+              if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('turnstile_status', { detail: false }))
             }
           },
           'error-callback': () => {
@@ -113,6 +117,7 @@ export function TurnstileField({ formId, onTokenChange }: TurnstileFieldProps) {
               setToken('')
               setLoadError('Security check failed. Refresh the challenge and try again.')
               onTokenChangeRef.current?.(false)
+              if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('turnstile_status', { detail: false }))
             }
           },
         })
@@ -132,6 +137,7 @@ export function TurnstileField({ formId, onTokenChange }: TurnstileFieldProps) {
       }
 
       onTokenChangeRef.current?.(false)
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('turnstile_status', { detail: false }))
       widgetIdRef.current = null
     }
   }, [siteKey])

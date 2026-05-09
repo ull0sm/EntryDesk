@@ -1,4 +1,5 @@
 import { login, loginWithGoogle, signup } from './actions'
+import { GoogleLoginButton } from '@/components/auth/google-login-button'
 import { PendingButton } from '@/components/ui/pending-button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -241,17 +242,7 @@ export default async function LoginPage({
 
                     <form action={loginWithGoogle}>
                         <NavigationOnPending title="Connecting to Google" />
-                        <PendingButton
-                            variant="outline"
-                            type="submit"
-                            className="h-11 w-full border-border/50 bg-muted/20 text-sm hover:bg-muted/35 dark:border-white/[0.12] dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
-                            pendingText="Opening Google..."
-                        >
-                            <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                                <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                            </svg>
-                            Google
-                        </PendingButton>
+                        <GoogleLoginButton />
                     </form>
 
                     <p className="mt-5 text-xs text-muted-foreground">By continuing, you agree to our Terms of Service.</p>
