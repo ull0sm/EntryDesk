@@ -2,24 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (
-        container: HTMLElement,
-        options: {
-          sitekey: string
-          callback?: (token: string) => void
-          'expired-callback'?: () => void
-          'error-callback'?: () => void
-          theme?: 'light' | 'dark' | 'auto'
-        }
-      ) => string
-      remove: (widgetId: string) => void
-      reset: (widgetId: string) => void
-    }
-  }
-}
+// The turnstile type is either provided globally or we cast window as any
 
 let turnstileScriptPromise: Promise<void> | null = null
 
@@ -28,7 +11,7 @@ function loadTurnstileScript() {
     return Promise.resolve()
   }
 
-  if (window.turnstile) {
+  if ((window as any).turnstile) {
     return Promise.resolve()
   }
 
@@ -88,24 +71,28 @@ export function TurnstileField({ formId, onTokenChange }: TurnstileFieldProps) {
 
     void loadTurnstileScript()
       .then(() => {
-        if (!isMounted || !containerRef.current || !window.turnstile) {
+        if (!isMounted || !containerRef.current || !(window as any).turnstile) {
           return
         }
 
-        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        widgetIdRef.current = (window as any).turnstile.render(containerRef.current, {
           sitekey: siteKey,
           theme: 'auto',
-          callback: (nextToken) => {
+          callback: (nextToken: string) => {
             if (isMounted) {
               setToken(nextToken)
               setLoadError(null)
               onTokenChangeRef.current?.(Boolean(nextToken))
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('turnstile_status', { detail: true }))
+              }
             }
           },
           'expired-callback': () => {
             if (isMounted) {
               setToken('')
               onTokenChangeRef.current?.(false)
+              if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('turnstile_status', { detail: false }))
             }
           },
           'error-callback': () => {
@@ -113,6 +100,7 @@ export function TurnstileField({ formId, onTokenChange }: TurnstileFieldProps) {
               setToken('')
               setLoadError('Security check failed. Refresh the challenge and try again.')
               onTokenChangeRef.current?.(false)
+              if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('turnstile_status', { detail: false }))
             }
           },
         })
@@ -127,11 +115,12 @@ export function TurnstileField({ formId, onTokenChange }: TurnstileFieldProps) {
     return () => {
       isMounted = false
 
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current)
+      if (widgetIdRef.current && (window as any).turnstile) {
+        (window as any).turnstile.remove(widgetIdRef.current)
       }
 
       onTokenChangeRef.current?.(false)
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('turnstile_status', { detail: false }))
       widgetIdRef.current = null
     }
   }, [siteKey])

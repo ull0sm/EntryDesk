@@ -18,7 +18,7 @@ Most grassroots martial arts events still operate on fragmented spreadsheets, pa
 [![Git Vital](https://api.gitvital.com/badge/ull0sm/entrydesk.svg)](https://gitvital.com/ull0sm/entrydesk)
 ## 🌍 Open Source Impact & Maintainership
 
-**Maintainer & Project Owner:** [@ull0sm](https://github.com/ull0sm)
+**Maintainers & Project Owners:** [@ull0sm](https://github.com/ull0sm) and [@bugsNburgers](https://github.com/bugsNburgers) 
 
 As the primary maintainer, my vision is to ship core operational infrastructure to the martial arts ecosystem. EntryDesk acts as a public good for organizers globally. I actively maintain the codebase, review pull requests, and manage the database schema to ensure security, high performance, and accessibility for any organization wanting to host a tournament.
 
@@ -66,7 +66,7 @@ We believe robust software is built collaboratively. We welcome issues, bug repo
 
 EntryDesk is made possible by our amazing community. Thank you to everyone who has helped build and improve this platform!
 
-**Core Maintainer:** [@ull0sm](https://github.com/ull0sm)
+**Core Maintainers:** [@ull0sm](https://github.com/ull0sm) and [@bugsNburgers](https://github.com/bugsNburgers)
 
 ### All Contributors
 <a href="https://github.com/ull0sm/entrydesk/graphs/contributors">
