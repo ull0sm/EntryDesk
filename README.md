@@ -15,7 +15,6 @@ Most grassroots martial arts events still operate on fragmented spreadsheets, pa
 
 **EntryDesk** is a highly optimized, role-based dashboard designed to standardize and scale martial arts tournaments. It provides a reproducible, self-hosted infrastructure that empowers local communities, dojos, and federations to run professional-grade events without the lock-in and high friction of paid proprietary software.
 
-[![Git Vital](https://api.gitvital.com/badge/ull0sm/entrydesk.svg)](https://gitvital.com/ull0sm/entrydesk)
 ## 🌍 Open Source Impact & Maintainership
 
 **Maintainers & Project Owners:** [@ull0sm](https://github.com/ull0sm) and [@bugsNburgers](https://github.com/bugsNburgers) 
