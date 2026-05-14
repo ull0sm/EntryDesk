@@ -13,7 +13,36 @@
 
 Most grassroots martial arts events still operate on fragmented spreadsheets, paper entries, and ad-hoc messaging. 
 
-**EntryDesk** is a highly optimized, role-based dashboard designed to standardize and scale martial arts tournaments. It provides a reproducible, self-hosted infrastructure that empowers local communities, dojos, and federations to run professional-grade events without the lock-in and high friction of paid proprietary software.
+**EntryDesk** is a highly optimized, role-based web application designed to standardize and scale martial arts tournaments. It gives **organizers** a central hub to create events, review coach applications, approve athlete entries, and export finalized rosters — while giving **coaches** an intuitive pipeline to register their students and track entry statuses in real time.
+
+Whether you run a local dojo competition or a regional federation championship, EntryDesk replaces the chaos of spreadsheets and WhatsApp groups with a reproducible, self-hosted platform — no lock-in, no per-event fees.
+
+## 📸 Screenshots
+
+<table>
+  <tr>
+    <td align="center" colspan="2">
+      <strong>Landing Page</strong><br/>
+      <img src="docs/screenshots/hero-dark.png" alt="EntryDesk landing page" width="100%"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Coach & Organizer Dashboards</strong><br/>
+      <img src="docs/screenshots/coach-organizer-preview-dark.png" alt="Coach and Organizer dashboard previews" width="100%"/>
+    </td>
+    <td align="center">
+      <strong>Student Portal</strong><br/>
+      <img src="docs/screenshots/student-portal-dark.png" alt="Student portal section" width="100%"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <strong>Browse Upcoming Events</strong><br/>
+      <img src="docs/screenshots/events-dark.png" alt="Public events browser" width="100%"/>
+    </td>
+  </tr>
+</table>
 
 ## 🌍 Open Source Impact & Maintainership
 
