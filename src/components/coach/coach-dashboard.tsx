@@ -95,7 +95,7 @@ export function CoachDashboard({ event, eventType, stats, entries, students, eve
 
             {!isPastEvent && (
                 <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
-                    <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] md:w-full max-h-[95vh] flex flex-col overflow-y-auto">
+                    <DialogContent className="sm:max-w-4xl w-[95vw] sm:w-[90vw] md:w-full max-h-[95vh] flex flex-col overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Register athletes</DialogTitle>
                             <DialogDescription>
