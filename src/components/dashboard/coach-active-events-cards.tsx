@@ -86,7 +86,7 @@ export function CoachActiveEventsCards({
                                 />
                             </div>
 
-                            <div className="mt-auto pt-4 flex gap-3">
+                            <div className="mt-auto pt-4 flex flex-col gap-2">
                                 <Button
                                     variant="outline"
                                     className="w-full rounded-xl border-black/10 bg-white/5 hover:bg-white/10 hover:text-foreground dark:border-white/10"
@@ -95,14 +95,14 @@ export function CoachActiveEventsCards({
                                     Details
                                 </Button>
                                 {status === 'approved' ? (
-                                    <Link href={`/dashboard/entries/${event.id}`}>
-                                        <Button className="rounded-xl">
+                                    <Link href={`/dashboard/entries/${event.id}`} className="w-full">
+                                        <Button className="w-full rounded-xl">
                                             Entries
                                             <ArrowRight className="ml-1 h-3.5 w-3.5" />
                                         </Button>
                                     </Link>
                                 ) : (
-                                    <ApplyButton eventId={event.id} status={status} registrationClosed={registrationClosed} />
+                                    <ApplyButton eventId={event.id} status={status} registrationClosed={registrationClosed} className="w-full rounded-xl" />
                                 )}
                             </div>
                         </div>
