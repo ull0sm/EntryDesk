@@ -119,6 +119,18 @@ EntryDesk is made possible by our amazing community. Thank you to everyone who h
   <img src="https://contrib.rocks/image?repo=ull0sm/entrydesk" alt="Contributors list" />
 </a>
 
+## 🛡️ Security
+
+If you discover a security vulnerability, please review our [Security Policy](SECURITY.md) and report it privately.
+
+## 🤝 Code of Conduct
+
+We are committed to fostering a welcoming and inclusive environment. Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating in our community.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ---
 
 <div align="center">
