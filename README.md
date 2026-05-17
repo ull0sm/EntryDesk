@@ -15,6 +15,53 @@ Most grassroots martial arts events still operate on fragmented spreadsheets, pa
 
 **EntryDesk** is a highly optimized, role-based dashboard designed to standardize and scale martial arts tournaments. It provides a reproducible, self-hosted infrastructure that empowers local communities, dojos, and federations to run professional-grade events without the lock-in and high friction of paid proprietary software.
 
+## 📸 Platform Previews
+
+<table>
+  <tr>
+    <td align="center" colspan="2">
+      <strong>Public Portal (Hero)</strong><br/>
+      <img src="public/screenshots/hero-section.png" alt="Hero Section" width="100%"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <strong>Browse Events</strong><br/>
+      <img src="public/screenshots/public-event-section.png" alt="Public Event Section" width="100%"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Coach Dashboard</strong><br/>
+      <img src="public/screenshots/coach-main-dashboard.png" alt="Coach Main Dashboard" width="100%"/>
+    </td>
+    <td align="center">
+      <strong>Organizer Dashboard</strong><br/>
+      <img src="public/screenshots/organizer-main-dashboard.png" alt="Organizer Main Dashboard" width="100%"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Coach Event Discovery</strong><br/>
+      <img src="public/screenshots/coach-event-section.png" alt="Coach Event Section" width="100%"/>
+    </td>
+    <td align="center">
+      <strong>Coach Event Management</strong><br/>
+      <img src="public/screenshots/coach-event-dashboard.png" alt="Coach Event Dashboard" width="100%"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Register Athletes</strong><br/>
+      <img src="public/screenshots/coach-event-register-students-popup.png" alt="Register Students" width="100%"/>
+    </td>
+    <td align="center">
+      <strong>Organizer Event Operations</strong><br/>
+      <img src="public/screenshots/organizer-event-dashboard.png" alt="Organizer Event Dashboard" width="100%"/>
+    </td>
+  </tr>
+</table>
+
 ## 🌍 Open Source Impact & Maintainership
 
 **Maintainers & Project Owners:** [@ull0sm](https://github.com/ull0sm) and [@bugsNburgers](https://github.com/bugsNburgers) 
@@ -71,6 +118,18 @@ EntryDesk is made possible by our amazing community. Thank you to everyone who h
 <a href="https://github.com/ull0sm/entrydesk/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=ull0sm/entrydesk" alt="Contributors list" />
 </a>
+
+## 🛡️ Security
+
+If you discover a security vulnerability, please review our [Security Policy](SECURITY.md) and report it privately.
+
+## 🤝 Code of Conduct
+
+We are committed to fostering a welcoming and inclusive environment. Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating in our community.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
