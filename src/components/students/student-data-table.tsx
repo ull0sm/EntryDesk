@@ -47,6 +47,7 @@ interface Student {
     dojo_id: string
     dojos?: { name: string } | null
     registration_no?: string | null
+    is_active?: boolean
     // Add other fields as needed
 }
 
@@ -103,6 +104,27 @@ export function StudentDataTable({ data, dojos, initialDojoFilter }: StudentData
                 )
             },
             cell: ({ row }) => <div className="font-medium pl-4">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "is_active",
+            header: "Status",
+            cell: ({ row }) => {
+                const isActive = row.getValue("is_active") !== false; // Default true if undefined
+                return (
+                    <div className="flex items-center">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                            {isActive ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+                )
+            },
+            filterFn: (row, id, value) => {
+                const isActive = row.getValue(id) !== false;
+                if (value === 'all') return true;
+                if (value === 'active') return isActive;
+                if (value === 'inactive') return !isActive;
+                return true;
+            }
         },
         {
             accessorKey: "dojoName", // Virtual column for filtering
@@ -241,6 +263,17 @@ export function StudentDataTable({ data, dojos, initialDojoFilter }: StudentData
                             <SelectItem value="all">All</SelectItem>
                             <SelectItem value="male">Male</SelectItem>
                             <SelectItem value="female">Female</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select onValueChange={(val) => setFilter("is_active", val)}>
+                        <SelectTrigger className="h-11 w-[120px] rounded-full">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                     </Select>
 
