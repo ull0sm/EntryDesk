@@ -29,7 +29,7 @@ BEGIN
                 -- If the student was created AFTER the start date of the older of the 2 events, 
                 -- they haven't had the chance to miss 2 events yet, so keep them active.
                 WHEN st.created_at > (
-                    SELECT MIN(ev.start_date)::timestamptz
+                    SELECT MIN(start_date)::timestamptz
                     FROM (
                         SELECT ev.start_date
                         FROM events ev
