@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/tooltip"
 import { StudentDialog } from "@/components/students/student-dialog"
 import { isSimpleEntryEventType } from '@/lib/events/type'
+import { updateEntryGenericChecked } from "@/app/dashboard/entries/actions"
 
 interface CoachEntriesListProps {
     entries: any[]
@@ -41,6 +42,13 @@ export function CoachEntriesList({ entries, eventDays, dojos, eventType, statusP
     const [editingStudent, setEditingStudent] = useState<any>(null)
     const [editingEntry, setEditingEntry] = useState<any>(null)
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [genericCheckedMap, setGenericCheckedMap] = useState<Record<string, boolean>>(() => {
+        const map: Record<string, boolean> = {}
+        for (const entry of entries) {
+            map[entry.id] = !!entry.generic_checked
+        }
+        return map
+    })
 
     // Filters & Pagination
     const [searchQuery, setSearchQuery] = useState('')
@@ -48,6 +56,7 @@ export function CoachEntriesList({ entries, eventDays, dojos, eventType, statusP
     const [beltFilter, setBeltFilter] = useState('all')
     const [dayFilter, setDayFilter] = useState('all')
     const [dojoFilter, setDojoFilter] = useState('all')
+    const [paymentFilter, setPaymentFilter] = useState('all')
     const [page, setPage] = useState(1)
     const isSimpleEntryEvent = isSimpleEntryEventType(eventType)
 
@@ -126,7 +135,11 @@ export function CoachEntriesList({ entries, eventDays, dojos, eventType, statusP
         const matchesBelt = beltFilter === 'all' || e.students?.rank === beltFilter
         const matchesDay = isSimpleEntryEvent || dayFilter === 'all' || e.event_day_id === dayFilter
         const matchesDojo = dojoFilter === 'all' || getDojoId(e) === dojoFilter
-        return matchesSearch && matchesStatus && matchesBelt && matchesDay && matchesDojo
+        
+        const isPaid = genericCheckedMap[e.id] ?? !!e.generic_checked
+        const matchesPayment = paymentFilter === 'all' || (paymentFilter === 'paid' && isPaid) || (paymentFilter === 'unpaid' && !isPaid)
+        
+        return matchesSearch && matchesStatus && matchesBelt && matchesDay && matchesDojo && matchesPayment
     })
 
     // Pagination Logic
@@ -206,6 +219,18 @@ export function CoachEntriesList({ entries, eventDays, dojos, eventType, statusP
         setDialogOpen(true)
     }
 
+    const handleToggleGeneric = async (entryId: string, checked: boolean) => {
+        const previous = genericCheckedMap[entryId] ?? false
+        setGenericCheckedMap((prev) => ({ ...prev, [entryId]: checked }))
+
+        try {
+            await updateEntryGenericChecked(entryId, checked, entries[0]?.event_id)
+        } catch (error) {
+            setGenericCheckedMap((prev) => ({ ...prev, [entryId]: previous }))
+            alert('Failed to save payment status')
+        }
+    }
+
     return (
         <div className="space-y-4">
             {!isReadOnly && (
@@ -277,6 +302,19 @@ export function CoachEntriesList({ entries, eventDays, dojos, eventType, statusP
                             ))}
                         </SelectContent>
                     </Select>
+                    
+                    {!isReadOnly && (
+                        <Select value={paymentFilter} onValueChange={(v) => { setPaymentFilter(v); setPage(1); }}>
+                            <SelectTrigger className="h-11 w-[140px] rounded-full">
+                                <SelectValue placeholder="Payment" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Payments</SelectItem>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="unpaid">Unpaid</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -320,6 +358,7 @@ export function CoachEntriesList({ entries, eventDays, dojos, eventType, statusP
                             {!isSimpleEntryEvent && <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Day</th>}
                             {!isSimpleEntryEvent && <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Type</th>}
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Status</th>
+                            {!isReadOnly && <th className="h-12 px-4 align-middle font-medium text-muted-foreground w-[90px]">Payment</th>}
                         </tr>
                     </thead>
                     <tbody className="[&_tr:last-child]:border-0">
@@ -406,6 +445,16 @@ export function CoachEntriesList({ entries, eventDays, dojos, eventType, statusP
                                             {entry.status}
                                         </span>
                                     </td>
+                                    
+                                    {/* Payment Checkbox */}
+                                    {!isReadOnly && (
+                                        <td className="p-4 align-middle">
+                                            <Checkbox
+                                                checked={!!genericCheckedMap[entry.id]}
+                                                onCheckedChange={(c) => handleToggleGeneric(entry.id, !!c)}
+                                            />
+                                        </td>
+                                    )}
                                 </tr>
                             )
                         })}

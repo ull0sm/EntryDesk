@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { StudentDialog } from "@/components/students/student-dialog"
 import { normalizeDobToIso } from "@/lib/date"
-import { updateStudentGenericChecked } from "@/app/dashboard/students/actions"
 import { toast } from "sonner"
 import { isSimpleEntryEventType } from '@/lib/events/type'
 
@@ -36,19 +35,13 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
     const [searchQuery, setSearchQuery] = useState('')
     const [editingStudent, setEditingStudent] = useState<any>(null)
     const [dialogOpen, setDialogOpen] = useState(false)
-    const [genericCheckedMap, setGenericCheckedMap] = useState<Record<string, boolean>>(() => {
-        const map: Record<string, boolean> = {}
-        for (const student of students) {
-            map[student.id] = !!student.generic_checked
-        }
-        return map
-    })
     const isSimpleEntryEvent = isSimpleEntryEventType(eventType)
 
     // Filters
     const [filterDojo, setFilterDojo] = useState('all')
     const [filterGender, setFilterGender] = useState('all')
     const [filterRank, setFilterRank] = useState('all')
+    const [filterStatus, setFilterStatus] = useState('all')
 
     // Derived Filter Options
     const uniqueDojos = Array.from(new Set(students.map(s => s.dojos?.name))).filter(Boolean).sort()
@@ -62,8 +55,10 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
         const matchesDojo = filterDojo === 'all' || s.dojos?.name === filterDojo
         const matchesGender = filterGender === 'all' || s.gender === filterGender
         const matchesRank = filterRank === 'all' || s.rank === filterRank
+        const isActive = s.is_active !== false
+        const matchesStatus = filterStatus === 'all' || (filterStatus === 'active' && isActive) || (filterStatus === 'inactive' && !isActive)
 
-        return matchesSearch && matchesDojo && matchesGender && matchesRank
+        return matchesSearch && matchesDojo && matchesGender && matchesRank && matchesStatus
     })
 
     const isAllFilteredSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedIds.has(s.id))
@@ -123,18 +118,6 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
         setDialogOpen(true)
     }
 
-    const handleToggleGeneric = async (studentId: string, checked: boolean) => {
-        const previous = genericCheckedMap[studentId] ?? false
-        setGenericCheckedMap((prev) => ({ ...prev, [studentId]: checked }))
-
-        try {
-            await updateStudentGenericChecked(studentId, checked, eventId)
-        } catch (error) {
-            setGenericCheckedMap((prev) => ({ ...prev, [studentId]: previous }))
-            alert('Failed to save checkbox state')
-        }
-    }
-
     return (
         <div className="space-y-4">
             <StudentDialog
@@ -189,6 +172,17 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
                         {uniqueDojos.map(d => (
                             <SelectItem key={d} value={d}>{d}</SelectItem>
                         ))}
+                    </SelectContent>
+                </Select>
+
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="h-11 w-full sm:w-[140px] rounded-full">
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -258,9 +252,9 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
                                 />
                             </th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Name</th>
+                            <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Status</th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Dojo</th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Rank</th>
-                            <th className="h-12 px-4 align-middle font-medium text-muted-foreground w-[90px]">Check</th>
                             <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Gender / Age</th>
                         </tr>
                     </thead>
@@ -292,14 +286,15 @@ export function CoachStudentRegister({ students, existingStudentIds, eventId, ev
                                         </Button>
                                     </div>
                                 </td>
+                                <td className="p-4 align-middle">
+                                    {student.is_active !== false ? (
+                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Active</span>
+                                    ) : (
+                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Inactive</span>
+                                    )}
+                                </td>
                                 <td className="p-4 align-middle">{student.dojos?.name || '-'}</td>
                                 <td className="p-4 align-middle">{student.rank}</td>
-                                <td className="p-4 align-middle">
-                                    <Checkbox
-                                        checked={!!genericCheckedMap[student.id]}
-                                        onCheckedChange={(c) => handleToggleGeneric(student.id, !!c)}
-                                    />
-                                </td>
                                 <td className="p-4 align-middle text-muted-foreground capitalize">
                                     {student.gender}, {(() => {
                                         const iso = normalizeDobToIso(student.date_of_birth)
