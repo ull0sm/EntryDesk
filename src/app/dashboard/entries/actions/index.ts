@@ -242,3 +242,26 @@ export async function bulkDeleteEntries(entryIds: string[]) {
     revalidatePath(`/dashboard/entries`)
     return { success: true }
 }
+
+export async function updateEntryGenericChecked(entryId: string, checked: boolean, eventId?: string) {
+    const { supabase, user } = await requireRole('coach')
+
+    const { error } = await supabase
+        .from('entries')
+        .update({ generic_checked: checked })
+        .eq('id', entryId)
+        .eq('coach_id', user.id)
+
+    if (error) {
+        console.error('Failed to update generic checkbox:', error)
+        throw new Error('Failed to save checkbox state')
+    }
+
+    if (eventId) {
+        revalidatePath(`/dashboard/entries/${eventId}`)
+    }
+    revalidatePath('/dashboard/entries')
+
+    return { success: true }
+}
+
