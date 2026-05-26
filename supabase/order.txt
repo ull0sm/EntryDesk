@@ -9,3 +9,4 @@ registration open close toggle.sql
 20260508_create_contacts_table.sql
 20260518230000_student_inactivity.sql
 20260520_student_generic_checked.sql
+20260527000000_restrict_dependent_deletes.sql
