@@ -53,6 +53,7 @@ type OrganizerEvent = {
     registration_close_date?: string | null
     is_registration_open?: boolean | null
     temporary_registration_closes_at?: string | null
+    organizer_id: string
 }
 
 export default async function DashboardPage() {
@@ -77,15 +78,13 @@ export default async function DashboardPage() {
         const { data: organizerEventIds } = await supabase
             .from('events')
             .select('id')
-            .eq('organizer_id', user.id)
 
         const myEventIds = (organizerEventIds ?? []).map((e) => e.id)
         eventsCount = myEventIds.length
 
         const { data: activeOrganizerEvents } = await supabase
             .from('events')
-            .select('id, title, start_date, end_date, location, event_type, event_level, registration_close_date, is_registration_open, temporary_registration_closes_at')
-            .eq('organizer_id', user.id)
+            .select('id, title, start_date, end_date, location, event_type, event_level, registration_close_date, is_registration_open, temporary_registration_closes_at, organizer_id')
             .gte('end_date', today)
             .order('start_date', { ascending: true })
 
@@ -105,7 +104,6 @@ export default async function DashboardPage() {
         const { data: dojoIds } = await supabase
             .from('dojos')
             .select('id')
-            .eq('coach_id', user.id)
 
         const myDojoIds = (dojoIds ?? []).map((d) => d.id)
         dojosCount = myDojoIds.length
@@ -386,7 +384,12 @@ export default async function DashboardPage() {
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="truncate text-sm font-medium">{event.title}</span>
+                                                    <span className="truncate text-sm font-medium flex items-center gap-2">
+                                                        {event.title}
+                                                        {event.organizer_id !== user.id && (
+                                                            <span className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-sm font-medium">Shared</span>
+                                                        )}
+                                                    </span>
                                                     {event.event_type ? (
                                                         <Badge className="px-1.5 py-0 text-[10px] capitalize" variant="secondary">
                                                             {event.event_type}

@@ -1,6 +1,6 @@
 'use client'
 
-import { MoreHorizontal, Pencil, Trash } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,11 +11,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DojoDialog } from "./dojo-dialog"
+import { DojoSharingDialog } from "./dojo-sharing-dialog"
 import { useState } from "react"
 import { deleteDojo } from "@/app/dashboard/dojos/actions"
 
-export function DojoActions({ dojo, studentCount }: { dojo: { id: string, name: string }, studentCount: number }) {
+export function DojoActions({ 
+  dojo, 
+  studentCount, 
+  isOwner,
+  collaborators 
+}: { 
+  dojo: { id: string, name: string }
+  studentCount: number
+  isOwner: boolean
+  collaborators: any[]
+}) {
     const [isEditOpen, setIsEditOpen] = useState(false)
+    const [isShareOpen, setIsShareOpen] = useState(false)
     const canDelete = studentCount === 0
 
     const handleDelete = async () => {
@@ -38,15 +50,23 @@ export function DojoActions({ dojo, studentCount }: { dojo: { id: string, name: 
             <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
                 <Pencil className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {canDelete ? (
-                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                    <Trash className="mr-2 h-4 w-4" /> Delete
+            
+            {isOwner && (
+              <>
+                <DropdownMenuItem onClick={() => setIsShareOpen(true)}>
+                    <Share2 className="mr-2 h-4 w-4" /> Manage Sharing
                 </DropdownMenuItem>
-            ) : (
-                <DropdownMenuLabel className="max-w-56 whitespace-normal text-xs font-normal text-muted-foreground">
-                    Delete unavailable: remove {studentCount} student{studentCount === 1 ? '' : 's'} first.
-                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {canDelete ? (
+                    <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                        <Trash className="mr-2 h-4 w-4" /> Delete
+                    </DropdownMenuItem>
+                ) : (
+                    <DropdownMenuLabel className="max-w-56 whitespace-normal text-xs font-normal text-muted-foreground">
+                        Delete unavailable: remove {studentCount} student{studentCount === 1 ? '' : 's'} first.
+                    </DropdownMenuLabel>
+                )}
+              </>
             )}
         </DropdownMenuContent>
         </DropdownMenu>
@@ -55,6 +75,15 @@ export function DojoActions({ dojo, studentCount }: { dojo: { id: string, name: 
              {/* Hidden trigger because we control it via state */}
              <span className="hidden"></span>
         </DojoDialog>
+
+        {isOwner && (
+          <DojoSharingDialog 
+            open={isShareOpen} 
+            onOpenChange={setIsShareOpen} 
+            dojo={dojo} 
+            collaborators={collaborators} 
+          />
+        )}
     </>
   )
 }

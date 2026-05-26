@@ -14,19 +14,34 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createDojo, updateDojo } from '@/app/dashboard/dojos/actions'
-import { useRouter } from 'next/navigation'
+import { Plus } from 'lucide-react'
 
 interface DojoDialogProps {
   dojo?: {
     id: string
     name: string
   }
-  children?: React.ReactNode // For the trigger button
+  children?: React.ReactNode // For custom triggers like span
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  variant?: 'default' | 'outline' | 'ghost'
+  size?: 'default' | 'sm' | 'lg' | 'icon'
+  triggerText?: string
+  showPlusIcon?: boolean
+  className?: string
 }
 
-export function DojoDialog({ dojo, children, open, onOpenChange }: DojoDialogProps) {
+export function DojoDialog({ 
+  dojo, 
+  children, 
+  open, 
+  onOpenChange,
+  variant = 'default',
+  size = 'default',
+  triggerText = 'Add Dojo',
+  showPlusIcon = false,
+  className
+}: DojoDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const submitLockRef = useRef(false)
@@ -57,11 +72,23 @@ export function DojoDialog({ dojo, children, open, onOpenChange }: DojoDialogPro
     }
   }
 
+  const renderTrigger = () => {
+    if (children) {
+      return <DialogTrigger asChild>{children}</DialogTrigger>
+    }
+    return (
+      <DialogTrigger asChild>
+        <Button variant={variant} size={size} className={className}>
+          {showPlusIcon && <Plus className="mr-1.5 h-3.5 w-3.5" />}
+          {triggerText}
+        </Button>
+      </DialogTrigger>
+    )
+  }
+
   return (
     <Dialog open={show} onOpenChange={setShow}>
-      <DialogTrigger asChild>
-        {children || <Button>Add Dojo</Button>}
-      </DialogTrigger>
+      {renderTrigger()}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Dojo' : 'Add New Dojo'}</DialogTitle>
@@ -103,3 +130,4 @@ export function DojoDialog({ dojo, children, open, onOpenChange }: DojoDialogPro
     </Dialog>
   )
 }
+

@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth/require-role'
 import { notFound } from 'next/navigation'
 import { EventSettingsForm } from '@/components/events/event-settings-form'
+import { EventSharingSection } from '@/components/events/event-sharing-section'
 
 export default async function EventSettingsPage({ params }: { params: { id: string } }) {
     const { id } = await params
@@ -8,7 +9,17 @@ export default async function EventSettingsPage({ params }: { params: { id: stri
 
     const { data: event } = await supabase
         .from('events')
-        .select('id, title, location, event_type, event_level, is_registration_open, is_public, organizer_id, temporary_registration_closes_at')
+        .select(`
+            id, title, location, event_type, event_level, is_registration_open, is_public, organizer_id, temporary_registration_closes_at,
+            event_collaborators (
+                user_id,
+                permission,
+                profiles (
+                    email,
+                    full_name
+                )
+            )
+        `)
         .eq('id', id)
         .single()
 
@@ -26,8 +37,15 @@ export default async function EventSettingsPage({ params }: { params: { id: stri
 
     if (!event) notFound()
 
-    if (role !== 'admin' && event.organizer_id !== user.id) {
-        notFound() // Or redirect to unauthorized
+    const isOwner = event.organizer_id === user.id
+    const collaborators = event.event_collaborators || []
+
+    if (role !== 'admin' && !isOwner) {
+        // Find if user is a collaborator with write access
+        const myCollaboration = collaborators.find((c: any) => c.user_id === user.id)
+        if (!myCollaboration || myCollaboration.permission !== 'write') {
+            notFound() // Or redirect to unauthorized
+        }
     }
 
     return (
@@ -38,6 +56,13 @@ export default async function EventSettingsPage({ params }: { params: { id: stri
             </div>
 
             <EventSettingsForm event={event} entryCount={entryCount ?? 0} />
+
+            {isOwner && (
+                <div className="pt-6">
+                    <EventSharingSection event={event} collaborators={collaborators} />
+                </div>
+            )}
         </div>
     )
 }
+

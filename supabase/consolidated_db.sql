@@ -1,13 +1,4 @@
--- ============================================================================
--- EntryDesk - Consolidated Database Schema
--- This file contains all database migrations consolidated into one schema
--- ============================================================================
-
--- ============================================================================
--- 1. Base Schema (from db.sql)
--- ============================================================================
-
--- Enable Row Level Security
+-- -- Enable Row Level Security
 -- alter table auth.users enable row level security;
 
 -- Enums
@@ -49,6 +40,7 @@ create table students (
     date_of_birth date,
     weight numeric, -- in kg
     rank text, -- 'white', 'yellow', 'brown_3', etc.
+    generic_checked boolean not null default false,
     created_at timestamptz default now()
 );
 
@@ -430,22 +422,354 @@ where
             and role in ('organizer', 'admin')
     );
 
+-- Grant access to authenticated users
 grant select on organizer_entries_view to authenticated;
 
--- ============================================================================
--- 2. Update-only migration: role-based RLS and organizer view hardening (from migration.sql)
--- ============================================================================
+-- Update-only migration: role-based RLS and organizer view hardening
 
--- DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
--- DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
--- (Policies already created above in base schema)
+ALTER TABLE students
+ADD COLUMN IF NOT EXISTS generic_checked boolean NOT NULL DEFAULT false;
 
--- View update (already created above with chest_no and registration_no)
+-- POLICIES: drop old, recreate new
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
 
--- ============================================================================
--- 3. Prevent accidental duplicate event creation (from prevent_duplicate_events.sql)
--- ============================================================================
+DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
 
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+
+DROP POLICY IF EXISTS "Coaches view own dojos" ON dojos;
+
+DROP POLICY IF EXISTS "Coaches insert own dojos" ON dojos;
+
+DROP POLICY IF EXISTS "Coaches update own dojos" ON dojos;
+
+DROP POLICY IF EXISTS "Coaches delete own dojos" ON dojos;
+
+DROP POLICY IF EXISTS "Coaches manage their students" ON students;
+
+DROP POLICY IF EXISTS "Public events are viewable by everyone" ON events;
+
+DROP POLICY IF EXISTS "Organizers manage own events" ON events;
+
+DROP POLICY IF EXISTS "View categories" ON categories;
+
+DROP POLICY IF EXISTS "Organizers manage categories" ON categories;
+
+DROP POLICY IF EXISTS "View event days" ON event_days;
+
+DROP POLICY IF EXISTS "Organizers manage event days" ON event_days;
+
+DROP POLICY IF EXISTS "Coaches manage own entries" ON entries;
+
+DROP POLICY IF EXISTS "Organizers view entries for their events" ON entries;
+
+DROP POLICY IF EXISTS "Organizers update entries" ON entries;
+
+DROP POLICY IF EXISTS "Coaches apply" ON event_applications;
+
+DROP POLICY IF EXISTS "Coaches view own applications" ON event_applications;
+
+DROP POLICY IF EXISTS "Organizers manage applications" ON event_applications;
+
+-- Profiles
+CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR
+SELECT USING (true);
+
+CREATE POLICY "Users can insert their own profile" ON profiles FOR
+INSERT
+WITH
+    CHECK (
+        auth.uid () = id
+        AND role = 'coach'
+    );
+
+CREATE POLICY "Users can update own profile" ON profiles FOR
+UPDATE USING (auth.uid () = id)
+WITH
+    CHECK (
+        auth.uid () = id
+        AND role = (
+            SELECT role
+            FROM profiles
+            WHERE
+                id = auth.uid ()
+        )
+    );
+
+-- Dojos
+CREATE POLICY "Coaches view own dojos" ON dojos FOR
+SELECT USING (
+        auth.uid () = coach_id
+        AND EXISTS (
+            SELECT 1
+            FROM profiles
+            WHERE
+                id = auth.uid ()
+                AND role IN ('coach', 'admin')
+        )
+    );
+
+CREATE POLICY "Coaches insert own dojos" ON dojos FOR
+INSERT
+WITH
+    CHECK (
+        auth.uid () = coach_id
+        AND EXISTS (
+            SELECT 1
+            FROM profiles
+            WHERE
+                id = auth.uid ()
+                AND role IN ('coach', 'admin')
+        )
+    );
+
+CREATE POLICY "Coaches update own dojos" ON dojos FOR
+UPDATE USING (
+    auth.uid () = coach_id
+    AND EXISTS (
+        SELECT 1
+        FROM profiles
+        WHERE
+            id = auth.uid ()
+            AND role IN ('coach', 'admin')
+    )
+);
+
+CREATE POLICY "Coaches delete own dojos" ON dojos FOR DELETE USING (
+    auth.uid () = coach_id
+    AND EXISTS (
+        SELECT 1
+        FROM profiles
+        WHERE
+            id = auth.uid ()
+            AND role IN ('coach', 'admin')
+    )
+);
+
+-- Students
+CREATE POLICY "Coaches manage their students" ON students USING (
+    EXISTS (
+        SELECT 1
+        FROM dojos
+        WHERE
+            dojos.id = students.dojo_id
+            AND dojos.coach_id = auth.uid ()
+    )
+    AND EXISTS (
+        SELECT 1
+        FROM profiles
+        WHERE
+            id = auth.uid ()
+            AND role IN ('coach', 'admin')
+    )
+);
+
+-- Events
+CREATE POLICY "Public events are viewable by everyone" ON events FOR
+SELECT USING (is_public = true);
+
+CREATE POLICY "Organizers manage own events" ON events USING (
+    auth.uid () = organizer_id
+    AND EXISTS (
+        SELECT 1
+        FROM profiles
+        WHERE
+            id = auth.uid ()
+            AND role IN ('organizer', 'admin')
+    )
+)
+WITH
+    CHECK (
+        auth.uid () = organizer_id
+        AND EXISTS (
+            SELECT 1
+            FROM profiles
+            WHERE
+                id = auth.uid ()
+                AND role IN ('organizer', 'admin')
+        )
+    );
+
+-- Categories / Event Days
+CREATE POLICY "View categories" ON categories FOR
+SELECT USING (true);
+
+CREATE POLICY "Organizers manage categories" ON categories USING (
+    EXISTS (
+        SELECT 1
+        FROM events
+        WHERE
+            events.id = categories.event_id
+            AND events.organizer_id = auth.uid ()
+            AND EXISTS (
+                SELECT 1
+                FROM profiles
+                WHERE
+                    id = auth.uid ()
+                    AND role IN ('organizer', 'admin')
+            )
+    )
+);
+
+CREATE POLICY "View event days" ON event_days FOR
+SELECT USING (true);
+
+CREATE POLICY "Organizers manage event days" ON event_days USING (
+    EXISTS (
+        SELECT 1
+        FROM events
+        WHERE
+            events.id = event_days.event_id
+            AND events.organizer_id = auth.uid ()
+            AND EXISTS (
+                SELECT 1
+                FROM profiles
+                WHERE
+                    id = auth.uid ()
+                    AND role IN ('organizer', 'admin')
+            )
+    )
+);
+
+-- Entries
+CREATE POLICY "Coaches manage own entries" ON entries USING (
+    auth.uid () = coach_id
+    AND EXISTS (
+        SELECT 1
+        FROM profiles
+        WHERE
+            id = auth.uid ()
+            AND role IN ('coach', 'admin')
+    )
+);
+
+CREATE POLICY "Organizers view entries for their events" ON entries FOR
+SELECT USING (
+        EXISTS (
+            SELECT 1
+            FROM events
+            WHERE
+                events.id = entries.event_id
+                AND events.organizer_id = auth.uid ()
+                AND EXISTS (
+                    SELECT 1
+                    FROM profiles
+                    WHERE
+                        id = auth.uid ()
+                        AND role IN ('organizer', 'admin')
+                )
+        )
+    );
+
+CREATE POLICY "Organizers update entries" ON entries FOR
+UPDATE USING (
+    EXISTS (
+        SELECT 1
+        FROM events
+        WHERE
+            events.id = entries.event_id
+            AND events.organizer_id = auth.uid ()
+            AND EXISTS (
+                SELECT 1
+                FROM profiles
+                WHERE
+                    id = auth.uid ()
+                    AND role IN ('organizer', 'admin')
+            )
+    )
+);
+
+-- Event Applications
+CREATE POLICY "Coaches apply" ON event_applications FOR
+INSERT
+WITH
+    CHECK (
+        auth.uid () = coach_id
+        AND EXISTS (
+            SELECT 1
+            FROM profiles
+            WHERE
+                id = auth.uid ()
+                AND role IN ('coach', 'admin')
+        )
+    );
+
+CREATE POLICY "Coaches view own applications" ON event_applications FOR
+SELECT USING (
+        auth.uid () = coach_id
+        AND EXISTS (
+            SELECT 1
+            FROM profiles
+            WHERE
+                id = auth.uid ()
+                AND role IN ('coach', 'admin')
+        )
+    );
+
+CREATE POLICY "Organizers manage applications" ON event_applications USING (
+    EXISTS (
+        SELECT 1
+        FROM events
+        WHERE
+            events.id = event_applications.event_id
+            AND events.organizer_id = auth.uid ()
+            AND EXISTS (
+                SELECT 1
+                FROM profiles
+                WHERE
+                    id = auth.uid ()
+                    AND role IN ('organizer', 'admin')
+            )
+    )
+);
+
+-- View update
+CREATE OR REPLACE VIEW organizer_entries_view AS
+SELECT e.id AS entry_id, e.event_id, e.status, e.participation_type, e.created_at, e.coach_id, e.event_day_id, e.category_id, e.student_id,
+
+-- Student info
+s.name AS student_name,
+s.rank AS student_rank,
+s.gender AS student_gender,
+s.weight AS student_weight,
+s.date_of_birth AS student_dob,
+
+-- Dojo info
+d.name AS dojo_name,
+
+-- Category info
+c.name AS category_name,
+
+-- Day info
+ed.name AS event_day_name, ed.date AS event_day_date,
+
+-- Coach info
+p.full_name AS coach_name, p.email AS coach_email,
+
+-- Event Organizer ID for filtering
+ev.organizer_id
+FROM
+    entries e
+    JOIN students s ON e.student_id = s.id
+    LEFT JOIN dojos d ON s.dojo_id = d.id
+    LEFT JOIN categories c ON e.category_id = c.id
+    LEFT JOIN event_days ed ON e.event_day_id = ed.id
+    JOIN profiles p ON e.coach_id = p.id
+    JOIN events ev ON e.event_id = ev.id
+WHERE
+    ev.organizer_id = auth.uid ()
+    AND EXISTS (
+        SELECT 1
+        FROM profiles
+        WHERE
+            id = auth.uid ()
+            AND role IN ('organizer', 'admin')
+    );
+
+GRANT SELECT ON organizer_entries_view TO authenticated;
+
+-- Prevent accidental duplicate event creation for the same organizer.
+-- Treats case and NULL/empty location consistently.
 CREATE UNIQUE INDEX IF NOT EXISTS events_dedupe_unique_idx ON events (
     organizer_id,
     lower(title),
@@ -455,9 +779,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS events_dedupe_unique_idx ON events (
     lower(coalesce(location, ''))
 );
 
--- ============================================================================
--- 4. Add student registration IDs and entry chest numbers (from 20240304_registration_and_chest_no.sql)
--- ============================================================================
+-- Migration to add student registration IDs and entry chest numbers
 
 -- 1. Student Registration IDs
 CREATE SEQUENCE IF NOT EXISTS student_reg_seq;
@@ -512,39 +834,95 @@ BEFORE UPDATE ON public.entries
 FOR EACH ROW
 EXECUTE FUNCTION assign_chest_no_on_approval();
 
--- ============================================================================
--- 5. Registration open/close toggle (from registration open close toggle.sql)
--- ============================================================================
+-- 3. Update Organizer View to include the new columns
+DROP VIEW IF EXISTS organizer_entries_view CASCADE;
 
-ALTER TABLE public.events ADD COLUMN IF NOT EXISTS is_registration_open BOOLEAN DEFAULT true;
+CREATE OR REPLACE VIEW organizer_entries_view AS
+SELECT 
+    e.id AS entry_id, 
+    e.event_id, 
+    e.status, 
+    e.participation_type, 
+    e.created_at, 
+    e.coach_id, 
+    e.event_day_id, 
+    e.category_id, 
+    e.student_id,
+    e.chest_no, -- Added chest_no
 
--- ============================================================================
--- 6. Registration close date (from 20260309_registration_close_date.sql)
--- ============================================================================
+    -- Student info
+    s.name AS student_name,
+    s.rank AS student_rank,
+    s.gender AS student_gender,
+    s.weight AS student_weight,
+    s.date_of_birth AS student_dob,
+    s.registration_no AS student_registration_no, -- Added registration_no
+
+    -- Dojo info
+    d.name AS dojo_name,
+
+    -- Category info
+    c.name AS category_name,
+
+    -- Day info
+    ed.name AS event_day_name, 
+    ed.date AS event_day_date,
+
+    -- Coach info
+    p.full_name AS coach_name, 
+    p.email AS coach_email,
+
+    -- Event Organizer ID for filtering
+    ev.organizer_id
+FROM
+    entries e
+    JOIN students s ON e.student_id = s.id
+    LEFT JOIN dojos d ON s.dojo_id = d.id
+    LEFT JOIN categories c ON e.category_id = c.id
+    LEFT JOIN event_days ed ON e.event_day_id = ed.id
+    JOIN profiles p ON e.coach_id = p.id
+    JOIN events ev on e.event_id = ev.id
+WHERE
+    ev.organizer_id = auth.uid ()
+    AND EXISTS (
+        SELECT 1
+        FROM profiles
+        WHERE
+            id = auth.uid ()
+            AND role IN ('organizer', 'admin')
+    );
+
+GRANT SELECT ON organizer_entries_view TO authenticated;
+
+
+ALTER TABLE public.events ADD COLUMN is_registration_open BOOLEAN DEFAULT true;
+
 
 ALTER TABLE public.events
 ADD COLUMN IF NOT EXISTS registration_close_date DATE;
 
--- ============================================================================
--- 7. Temporary registration (from 20260310234831_temporary_registration.sql)
--- ============================================================================
-
 ALTER TABLE public.events
 ADD COLUMN IF NOT EXISTS temporary_registration_closes_at TIMESTAMPTZ;
 
--- ============================================================================
--- 8. Event level support (from 20260312_event_level.sql)
--- ============================================================================
 
--- Note: event_level enum already created in base schema
--- This just adds the column if not exists
+do $$
+begin
+    if not exists (
+        select 1
+        from pg_type
+        where typname = 'event_level'
+    ) then
+        create type event_level as enum ('district', 'state', 'national', 'international');
+    end if;
+end
+$$;
+
+alter table public.events
+add column if not exists event_level event_level;
 
 comment on column public.events.event_level is 'Competition scope such as district, state, national, or international.';
 
--- ============================================================================
--- 9. Create contacts table (from 20260508_create_contacts_table.sql)
--- ============================================================================
-
+-- Create contacts table for contact form submissions
 CREATE TABLE IF NOT EXISTS contacts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -573,9 +951,6 @@ CREATE POLICY "Allow authenticated users to read contacts" ON contacts
   FOR SELECT
   USING (auth.role() = 'authenticated');
 
--- ============================================================================
--- 10. Student inactivity tracking (from 20260518230000_student_inactivity.sql)
--- ============================================================================
 
 -- Add is_active column
 ALTER TABLE students ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true;
@@ -682,17 +1057,332 @@ AFTER INSERT OR UPDATE OR DELETE ON entries
 FOR EACH ROW
 EXECUTE FUNCTION trigger_evaluate_dojo_students_activity();
 
--- ============================================================================
--- 11. Move generic_checked from students to entries (from 20260520110000_move_generic_checked.sql)
--- ============================================================================
 
 -- Add generic_checked to entries table
 ALTER TABLE entries ADD COLUMN IF NOT EXISTS generic_checked boolean NOT NULL DEFAULT false;
 
--- ============================================================================
--- 12. Update organizer_entries_view to include all new columns
--- ============================================================================
+-- Drop generic_checked from students table
+ALTER TABLE students DROP COLUMN IF EXISTS generic_checked;
 
+
+create or replace function public.prevent_dojo_delete_with_students()
+returns trigger
+language plpgsql
+as $$
+begin
+    if exists (
+        select 1
+        from public.students
+        where dojo_id = old.id
+    ) then
+        raise exception using message = 'Cannot delete this dojo while students still belong to it.';
+    end if;
+
+    return old;
+end;
+$$;
+
+drop trigger if exists trg_prevent_dojo_delete_with_students on public.dojos;
+create trigger trg_prevent_dojo_delete_with_students
+before delete on public.dojos
+for each row
+execute function public.prevent_dojo_delete_with_students();
+
+create or replace function public.prevent_event_delete_with_entries()
+returns trigger
+language plpgsql
+as $$
+begin
+    if exists (
+        select 1
+        from public.entries
+        where event_id = old.id
+          and (status = 'approved' or chest_no is not null)
+    ) then
+        raise exception using message = 'Cannot delete this event while approved registrations or assigned chest numbers exist.';
+    end if;
+
+    return old;
+end;
+$$;
+
+drop trigger if exists trg_prevent_event_delete_with_entries on public.events;
+create trigger trg_prevent_event_delete_with_entries
+before delete on public.events
+for each row
+execute function public.prevent_event_delete_with_entries();
+
+-- Create Enum
+create type collaborator_permission as enum ('read', 'write');
+
+-- Create Tables
+create table dojo_collaborators (
+    id uuid default gen_random_uuid() primary key,
+    dojo_id uuid references dojos(id) on delete cascade not null,
+    user_id uuid references profiles(id) on delete cascade not null,
+    permission collaborator_permission not null default 'read',
+    created_at timestamptz default now(),
+    unique(dojo_id, user_id)
+);
+
+alter table dojo_collaborators enable row level security;
+
+create table event_collaborators (
+    id uuid default gen_random_uuid() primary key,
+    event_id uuid references events(id) on delete cascade not null,
+    user_id uuid references profiles(id) on delete cascade not null,
+    permission collaborator_permission not null default 'read',
+    created_at timestamptz default now(),
+    unique(event_id, user_id)
+);
+
+alter table event_collaborators enable row level security;
+
+-- DOJOS RLS
+drop policy "Coaches view own dojos" on dojos;
+create policy "Coaches view dojos" on dojos for select using (
+    (
+        auth.uid() = coach_id
+        or exists (select 1 from dojo_collaborators dc where dc.dojo_id = dojos.id and dc.user_id = auth.uid())
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+drop policy "Coaches update own dojos" on dojos;
+create policy "Coaches update dojos" on dojos for update using (
+    (
+        auth.uid() = coach_id
+        or exists (select 1 from dojo_collaborators dc where dc.dojo_id = dojos.id and dc.user_id = auth.uid() and dc.permission = 'write')
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+-- STUDENTS RLS
+drop policy "Coaches manage their students" on students;
+
+create policy "Coaches view their students" on students for select using (
+    exists (
+        select 1 from dojos
+        where dojos.id = students.dojo_id
+        and (
+            dojos.coach_id = auth.uid()
+            or exists (select 1 from dojo_collaborators dc where dc.dojo_id = dojos.id and dc.user_id = auth.uid())
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+create policy "Coaches insert their students" on students for insert with check (
+    exists (
+        select 1 from dojos
+        where dojos.id = students.dojo_id
+        and (
+            dojos.coach_id = auth.uid()
+            or exists (select 1 from dojo_collaborators dc where dc.dojo_id = dojos.id and dc.user_id = auth.uid() and dc.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+create policy "Coaches update their students" on students for update using (
+    exists (
+        select 1 from dojos
+        where dojos.id = students.dojo_id
+        and (
+            dojos.coach_id = auth.uid()
+            or exists (select 1 from dojo_collaborators dc where dc.dojo_id = dojos.id and dc.user_id = auth.uid() and dc.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+create policy "Coaches delete their students" on students for delete using (
+    exists (
+        select 1 from dojos
+        where dojos.id = students.dojo_id
+        and (
+            dojos.coach_id = auth.uid()
+            or exists (select 1 from dojo_collaborators dc where dc.dojo_id = dojos.id and dc.user_id = auth.uid() and dc.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+-- DOJO COLLABORATORS RLS
+create policy "Owners manage dojo collaborators" on dojo_collaborators using (
+    exists (select 1 from dojos where dojos.id = dojo_collaborators.dojo_id and dojos.coach_id = auth.uid())
+);
+create policy "Collaborators view own dojo collaboration" on dojo_collaborators for select using (
+    auth.uid() = user_id
+);
+
+-- EVENTS RLS
+drop policy "Organizers manage own events" on events;
+
+create policy "Organizers insert own events" on events for insert with check (
+    auth.uid() = organizer_id
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+create policy "Organizers delete own events" on events for delete using (
+    auth.uid() = organizer_id
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+create policy "Organizers view own and shared events" on events for select using (
+    (
+        auth.uid() = organizer_id
+        or exists (select 1 from event_collaborators ec where ec.event_id = events.id and ec.user_id = auth.uid())
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+create policy "Organizers update own and shared events" on events for update using (
+    (
+        auth.uid() = organizer_id
+        or exists (select 1 from event_collaborators ec where ec.event_id = events.id and ec.user_id = auth.uid() and ec.permission = 'write')
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+-- EVENT COLLABORATORS RLS
+create policy "Owners manage event collaborators" on event_collaborators using (
+    exists (select 1 from events where events.id = event_collaborators.event_id and events.organizer_id = auth.uid())
+);
+create policy "Collaborators view own event collaboration" on event_collaborators for select using (
+    auth.uid() = user_id
+);
+
+-- CATEGORIES RLS
+drop policy "Organizers manage categories" on categories;
+create policy "Organizers manage categories" on categories using (
+    exists (
+        select 1 from events
+        where events.id = categories.event_id
+        and (
+            events.organizer_id = auth.uid()
+            or exists (select 1 from event_collaborators ec where ec.event_id = events.id and ec.user_id = auth.uid() and ec.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+-- EVENT_DAYS RLS
+drop policy "Organizers manage event days" on event_days;
+create policy "Organizers manage event days" on event_days using (
+    exists (
+        select 1 from events
+        where events.id = event_days.event_id
+        and (
+            events.organizer_id = auth.uid()
+            or exists (select 1 from event_collaborators ec where ec.event_id = events.id and ec.user_id = auth.uid() and ec.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+-- ENTRIES RLS
+drop policy "Coaches manage own entries" on entries;
+
+create policy "Coaches view entries" on entries for select using (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid())
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+create policy "Coaches insert entries" on entries for insert with check (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid() and dc.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+create policy "Coaches update entries" on entries for update using (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid() and dc.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+create policy "Coaches delete entries" on entries for delete using (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid() and dc.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+drop policy "Organizers view entries for their events" on entries;
+create policy "Organizers view entries for their events" on entries for select using (
+    exists (
+        select 1 from events
+        where events.id = entries.event_id
+        and (
+            events.organizer_id = auth.uid()
+            or exists (select 1 from event_collaborators ec where ec.event_id = events.id and ec.user_id = auth.uid())
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+drop policy "Organizers update entries" on entries;
+create policy "Organizers update entries" on entries for update using (
+    exists (
+        select 1 from events
+        where events.id = entries.event_id
+        and (
+            events.organizer_id = auth.uid()
+            or exists (select 1 from event_collaborators ec where ec.event_id = events.id and ec.user_id = auth.uid() and ec.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+-- EVENT_APPLICATIONS RLS
+drop policy "Coaches view own applications" on event_applications;
+create policy "Coaches view own applications" on event_applications for select using (
+    auth.uid() = coach_id
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+drop policy "Organizers manage applications" on event_applications;
+create policy "Organizers manage applications" on event_applications using (
+    exists (
+        select 1 from events
+        where events.id = event_applications.event_id
+        and (
+            events.organizer_id = auth.uid()
+            or exists (select 1 from event_collaborators ec where ec.event_id = events.id and ec.user_id = auth.uid() and ec.permission = 'write')
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('organizer', 'admin'))
+);
+
+-- VIEW UPDATE
 DROP VIEW IF EXISTS organizer_entries_view CASCADE;
 
 CREATE OR REPLACE VIEW organizer_entries_view AS
@@ -748,7 +1438,13 @@ FROM
     JOIN profiles p ON e.coach_id = p.id
     JOIN events ev ON e.event_id = ev.id
 WHERE
-    ev.organizer_id = auth.uid ()
+    (
+        ev.organizer_id = auth.uid ()
+        OR EXISTS (
+            SELECT 1 FROM event_collaborators ec
+            WHERE ec.event_id = ev.id AND ec.user_id = auth.uid()
+        )
+    )
     AND EXISTS (
         SELECT 1
         FROM profiles
@@ -759,57 +1455,99 @@ WHERE
 
 GRANT SELECT ON organizer_entries_view TO authenticated;
 
--- ============================================================================
--- 13. Prevent dependent deletes (from 20260527000000_restrict_dependent_deletes.sql)
--- ============================================================================
 
-create or replace function public.prevent_dojo_delete_with_students()
-returns trigger
-language plpgsql
+-- Fix infinite recursion in RLS by using security definer functions for ownership checks
+
+-- 1. Helper Functions (security definer bypasses RLS)
+create or replace function get_dojo_coach_id(dojo_uuid uuid) 
+returns uuid 
+language sql 
+security definer 
+set search_path = public
 as $$
-begin
-    if exists (
-        select 1
-        from public.students
-        where dojo_id = old.id
-    ) then
-        raise exception using message = 'Cannot delete this dojo while students still belong to it.';
-    end if;
-
-    return old;
-end;
+    select coach_id from dojos where id = dojo_uuid;
 $$;
 
-drop trigger if exists trg_prevent_dojo_delete_with_students on public.dojos;
-create trigger trg_prevent_dojo_delete_with_students
-before delete on public.dojos
-for each row
-execute function public.prevent_dojo_delete_with_students();
-
-create or replace function public.prevent_event_delete_with_entries()
-returns trigger
-language plpgsql
+create or replace function get_event_organizer_id(event_uuid uuid) 
+returns uuid 
+language sql 
+security definer 
+set search_path = public
 as $$
-begin
-    if exists (
-        select 1
-        from public.entries
-        where event_id = old.id
-          and (status = 'approved' or chest_no is not null)
-    ) then
-        raise exception using message = 'Cannot delete this event while approved registrations or assigned chest numbers exist.';
-    end if;
-
-    return old;
-end;
+    select organizer_id from events where id = event_uuid;
 $$;
 
-drop trigger if exists trg_prevent_event_delete_with_entries on public.events;
-create trigger trg_prevent_event_delete_with_entries
-before delete on public.events
-for each row
-execute function public.prevent_event_delete_with_entries();
+-- 2. Update Dojo Collaborators Policies
+drop policy if exists "Owners manage dojo collaborators" on dojo_collaborators;
+create policy "Owners manage dojo collaborators" on dojo_collaborators using (
+    auth.uid() = get_dojo_coach_id(dojo_id)
+);
 
--- ============================================================================
--- End of consolidated database schema
--- ============================================================================
+-- Note: "Collaborators view own access" policy does not query `dojos` so it does not cause recursion.
+
+-- 3. Update Event Collaborators Policies
+drop policy if exists "Owners manage event collaborators" on event_collaborators;
+create policy "Owners manage event collaborators" on event_collaborators using (
+    auth.uid() = get_event_organizer_id(event_id)
+);
+
+
+-- Fix Entries RLS to allow owners of dojos to see entries created by collaborators
+
+drop policy "Coaches view entries" on entries;
+create policy "Coaches view entries" on entries for select using (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and (d.coach_id = auth.uid() or exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid()))
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+drop policy "Coaches insert entries" on entries;
+create policy "Coaches insert entries" on entries for insert with check (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and (d.coach_id = auth.uid() or exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid() and dc.permission = 'write'))
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+drop policy "Coaches update entries" on entries;
+create policy "Coaches update entries" on entries for update using (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and (d.coach_id = auth.uid() or exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid() and dc.permission = 'write'))
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+drop policy "Coaches delete entries" on entries;
+create policy "Coaches delete entries" on entries for delete using (
+    (
+        auth.uid() = coach_id
+        or exists (
+            select 1 from students s
+            join dojos d on s.dojo_id = d.id
+            where s.id = entries.student_id
+            and (d.coach_id = auth.uid() or exists (select 1 from dojo_collaborators dc where dc.dojo_id = d.id and dc.user_id = auth.uid() and dc.permission = 'write'))
+        )
+    )
+    and exists (select 1 from profiles where id = auth.uid() and role in ('coach', 'admin'))
+);
+
+
