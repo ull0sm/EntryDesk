@@ -59,7 +59,7 @@ export default async function EventSettingsPage({ params }: { params: { id: stri
 
             {isOwner && (
                 <div className="pt-6">
-                    <EventSharingSection event={event} collaborators={collaborators} />
+                    <EventSharingSection event={event} collaborators={collaborators as any} />
                 </div>
             )}
         </div>
