@@ -45,7 +45,10 @@ export default async function DojosPage({
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {dojos && dojos.length > 0 ? (
-                    dojos.map((dojo) => (
+                    dojos.map((dojo) => {
+                        const studentCount = Number(dojo.students?.[0]?.count ?? 0)
+
+                        return (
                         <div
                             key={dojo.id}
                             className="dashboard-surface dashboard-list-item group relative p-3"
@@ -65,16 +68,17 @@ export default async function DojosPage({
                                         <div className="text-sm font-medium">{dojo.name}</div>
                                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                             <Users className="h-2.5 w-2.5" />
-                                            <span>{dojo.students?.[0]?.count || 0} students</span>
+                                            <span>{studentCount} students</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="relative z-20">
-                                    <DojoActions dojo={dojo} />
+                                    <DojoActions dojo={dojo} studentCount={studentCount} />
                                 </div>
                             </div>
                         </div>
-                    ))
+                        )
+                    })
                 ) : (
                     <div className="dashboard-empty col-span-full py-8 text-center">
                         <LayoutGrid className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />

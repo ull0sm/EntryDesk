@@ -55,6 +55,19 @@ export async function updateDojo(dojoId: string, formData: FormData) {
 export async function deleteDojo(dojoId: string) {
   const { supabase, user } = await requireRole('coach')
 
+  const { count: studentCount, error: studentCountError } = await supabase
+    .from('students')
+    .select('id', { count: 'exact', head: true })
+    .eq('dojo_id', dojoId)
+
+  if (studentCountError) {
+    throw new Error(studentCountError.message)
+  }
+
+  if ((studentCount ?? 0) > 0) {
+    throw new Error('This dojo still has students. Remove or reassign them before deleting the dojo.')
+  }
+
   const { error } = await supabase
     .from('dojos')
     .delete()

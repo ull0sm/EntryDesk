@@ -29,6 +29,20 @@ export async function deleteEvent(formData: FormData) {
         throw new Error('Not authorized to delete this event')
     }
 
+    // Only restrict deletion if entries are approved or chest numbers have been assigned
+    const { data: entries, error: entriesError } = await supabase
+        .from('entries')
+        .select('id, status, chest_no')
+        .eq('event_id', eventId)
+
+    if (entriesError) throw new Error(entriesError.message)
+
+    const blockingCount = (entries ?? []).filter((e: any) => e.status === 'approved' || e.chest_no !== null).length
+
+    if (blockingCount > 0) {
+        throw new Error('This event has approved registrations or assigned chest numbers. Deletion is restricted.')
+    }
+
     const { error: deleteError } = await supabase.from('events').delete().eq('id', eventId)
 
     if (deleteError) {

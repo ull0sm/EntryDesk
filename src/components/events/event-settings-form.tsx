@@ -32,13 +32,14 @@ interface EventSettingsFormProps {
         is_public: boolean
         temporary_registration_closes_at?: string | null
     }
+    entryCount: number
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
     return error instanceof Error ? error.message : fallback
 }
 
-export function EventSettingsForm({ event }: EventSettingsFormProps) {
+export function EventSettingsForm({ event, entryCount }: EventSettingsFormProps) {
     const [title, setTitle] = useState(event.title)
     const [location, setLocation] = useState(event.location || '')
     const [eventLevel, setEventLevel] = useState<EventLevel | ''>(event.event_level || '')
@@ -47,6 +48,7 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
     const [isTogglingVisibility, setIsTogglingVisibility] = useState(false)
     const [tempClosesAt, setTempClosesAt] = useState<string | null>(event.temporary_registration_closes_at || null)
     const requiresEventLevel = isEventTypeRequiringLevel(event.event_type)
+    const canDeleteEvent = entryCount === 0
 
     const handleTemporaryOpen = async (minutes: number) => {
         setIsSaving(true)
@@ -239,7 +241,13 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
                                 </p>
                             </div>
                             <div className="shrink-0 flex justify-end">
-                                <DeleteEventForm eventId={event.id} eventTitle={event.title} />
+                                {canDeleteEvent ? (
+                                    <DeleteEventForm eventId={event.id} eventTitle={event.title} />
+                                ) : (
+                                    <div className="max-w-sm rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                                        Delete is disabled because this event already has {entryCount} registration{entryCount === 1 ? '' : 's'}.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </AccordionContent>

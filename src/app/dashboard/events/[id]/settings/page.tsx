@@ -12,6 +12,18 @@ export default async function EventSettingsPage({ params }: { params: { id: stri
         .eq('id', id)
         .single()
 
+    // Count only entries that should block deletion: approved or with assigned chest numbers
+    const { data: entries, error: entriesError } = await supabase
+        .from('entries')
+        .select('id, status, chest_no')
+        .eq('event_id', id)
+
+    if (entriesError) {
+        throw new Error(entriesError.message)
+    }
+
+    const entryCount = (entries ?? []).filter((e: any) => e.status === 'approved' || e.chest_no !== null).length
+
     if (!event) notFound()
 
     if (role !== 'admin' && event.organizer_id !== user.id) {
@@ -25,7 +37,7 @@ export default async function EventSettingsPage({ params }: { params: { id: stri
                 <p className="text-sm text-muted-foreground">Manage your event configurations, registration status, and danger zone actions.</p>
             </div>
 
-            <EventSettingsForm event={event} />
+            <EventSettingsForm event={event} entryCount={entryCount ?? 0} />
         </div>
     )
 }
