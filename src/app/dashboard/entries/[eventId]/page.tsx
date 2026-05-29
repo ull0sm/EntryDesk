@@ -24,13 +24,11 @@ export default async function EventEntriesPage({ params }: { params: { eventId: 
   }
 
   // Fetch ALL students for this coach (via Dojos)
-  // Logic: Users -> Profiles -> Dojos -> Students
+  // RLS ensures we only get students for dojos we own or collaborate on.
   const { data: students } = await supabase
     .from('students')
     .select('*, dojos!inner(id, name, coach_id)')
-    .eq('dojos.coach_id', user.id)
     .order('name')
-  // Note: RLS should handle this, but the explicit inner join ensures we get students belonging to dojos owned by this coach.
 
   // Fetch Entries
   const { data: entries } = await supabase
@@ -41,7 +39,6 @@ export default async function EventEntriesPage({ params }: { params: { eventId: 
         event_days(name)
     `)
     .eq('event_id', eventId)
-    .eq('coach_id', user.id)
     .order('created_at', { ascending: false })
 
   // Fetch Event Days for Registration
@@ -54,8 +51,7 @@ export default async function EventEntriesPage({ params }: { params: { eventId: 
   // Fetch Dojos for Edit Form
   const { data: dojos } = await supabase
     .from('dojos')
-    .select('id, name')
-    .eq('coach_id', user.id)
+    .select('id, name, coach_id')
 
   // Compute Stats
   const validEntries = entries || []

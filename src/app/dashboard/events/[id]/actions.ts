@@ -25,9 +25,6 @@ export async function deleteEvent(formData: FormData) {
         throw new Error('Event not found')
     }
 
-    if (event.organizer_id !== user.id) {
-        throw new Error('Not authorized to delete this event')
-    }
 
     // Only restrict deletion if entries are approved or chest numbers have been assigned
     const { data: entries, error: entriesError } = await supabase
@@ -69,9 +66,6 @@ export async function updateEventSettings(eventId: string, data: { title?: strin
 
     if (eventError || !event) throw new Error('Event not found')
 
-    if (event.organizer_id !== user.id) {
-        throw new Error('Not authorized to edit this event')
-    }
 
     const updateData = { ...data }
     if (!isEventTypeRequiringLevel(event.event_type)) {

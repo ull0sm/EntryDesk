@@ -26,7 +26,6 @@ export default async function StudentsPage({
   const { data: dojos } = await supabase
     .from('dojos')
     .select('id, name')
-    .eq('coach_id', user.id)
 
   const selectedDojo = dojoParam ? (dojos || []).find((d) => d.name === dojoParam) : undefined
   const selectedDojoId = selectedDojo?.id

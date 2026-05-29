@@ -21,7 +21,7 @@ export default async function EventApprovalsPage({
         .eq('id', id)
         .single()
 
-    if (!event || (role !== 'admin' && event.organizer_id !== user.id)) {
+    if (!event) {
         return notFound()
     }
 

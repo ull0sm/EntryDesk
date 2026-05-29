@@ -18,10 +18,6 @@ export default async function EventLayout({
         .select('*')
         .eq('id', id)
 
-    if (role !== 'admin') {
-        eventQuery = eventQuery.eq('organizer_id', user.id)
-    }
-
     const { data: event } = await eventQuery.single()
 
     if (!event) notFound()
