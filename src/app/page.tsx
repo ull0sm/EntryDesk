@@ -36,7 +36,7 @@ export default function Page() {
           I build clean, high-impact products.
         </h1>
         <p className="mt-6 max-w-3xl text-lg text-slate-300">
-          I am ull0sm, an open-source focused builder shipping modern web products with elegant UX and reliable execution.
+          I am ull0sm, an open-source-focused builder shipping modern web products with elegant UX and reliable execution.
           My work blends product clarity, engineering depth, and minimal design.
         </p>
 
@@ -46,7 +46,7 @@ export default function Page() {
               <Github className="h-4 w-4" /> GitHub
             </span>
           </md-filled-button>
-          <md-outlined-button href="mailto:hello@ull0sm.dev">
+          <md-outlined-button href="mailto:hello@ull0sm.dev" rel="noreferrer">
             <span className="inline-flex items-center gap-2">
               <Mail className="h-4 w-4" /> Contact
             </span>
@@ -62,21 +62,32 @@ export default function Page() {
             <article key={project.name} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-lg">
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-xl font-semibold">{project.name}</h3>
-                <a href={project.href} target="_blank" rel="noreferrer" className="text-emerald-300 hover:text-emerald-200">
+                <a
+                  href={project.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`View ${project.name} on GitHub (opens in new tab)`}
+                  className="text-emerald-300 hover:text-emerald-200"
+                >
                   <ArrowUpRight className="h-4 w-4" />
                 </a>
               </div>
 
               <p className="mt-4 text-sm leading-6 text-slate-300">{project.description}</p>
 
-              <md-chip-set class="mt-5 flex flex-wrap gap-2">
+              <md-chip-set className="mt-5 flex flex-wrap gap-2">
                 {project.stack.map((item) => (
                   <md-assist-chip key={item} label={item} />
                 ))}
               </md-chip-set>
 
               <div className="mt-6">
-                <md-filled-tonal-button href={project.href} target="_blank" rel="noreferrer">
+                <md-filled-tonal-button
+                  href={project.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`View ${project.name} repository (opens in new tab)`}
+                >
                   View repository
                 </md-filled-tonal-button>
               </div>
